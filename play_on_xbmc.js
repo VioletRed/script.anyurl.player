@@ -5,34 +5,6 @@
 /* ============================================================================
  * Site independent code here!!!!
  * */
-
-var xbmc_address = GM_getValue('XBMC_ADDRESS');
-var xbmc_playlist = GM_getValue('XBMC_PLAYLIST');
-var xbmc_queued = false;
-
-GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
-GM_registerMenuCommand('Select XBMC playlist', modify_xbmc_playlist);
-
-if (xbmc_address === undefined)
-	modify_xbmc_address();
-
-if (xbmc_playlist === undefined)
-	modify_xbmc_playlist();
-
-function modify_xbmc_address() {
-	xbmc_address = window
-			.prompt(
-					'Enter the address for the XBMC web interface\n(username:password@address:port)',
-					xbmc_address);
-	GM_setValue("XBMC_ADDRESS", xbmc_address);
-}
-
-function modify_xbmc_playlist() {
-	xbmc_playlist = window.prompt('Set the playlist number (0 or 1)',
-			xbmc_playlist);
-	GM_setValue("XBMC_PLAYLIST", xbmc_playlist);
-}
-
 function play_movie_directly(video_url) {
 	GM_xmlhttpRequest({
 		method : 'POST',
