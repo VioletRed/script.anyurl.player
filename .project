@@ -3,6 +3,7 @@
 	<name>AnyURL</name>
 	<comment></comment>
 	<projects>
+		<project>urlresolver</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

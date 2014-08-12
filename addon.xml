@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.video.anyurl"
+       name="AnyURL Player"
+       version="0.0.2"
+       provider-name="Violet">
+  <requires>
+    <import addon="xbmc.python" version="2.1.0"/>
+    <import addon="script.module.urlresolver"  version="2.4.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource"
+	  library="addon.py" />
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">XBMC Subtitles</summary>
+    <summary lang="es">Subtítulos XBMC</summary>
+    <description lang="en">Play any URL supported by URLResolver</description>
+    <description lang="es">Reproducir cualquier enlace soportado por URLResolver</description>
+    <description lang="sv">Spela länkar</description>
+    <platform>all</platform>
+    <website></website>
+    <source>https://github.com/VioletRed/script.video.anyurl</source>
+    <forum></forum>
+    <email></email>
+  </extension>
+</addon>
