@@ -15,13 +15,13 @@ function play_movie_directly(video_url) {
 				+ '"plugin://plugin.video.youtube/?action=play_video&videoid='
 				+ video_url.replace('v=', '') + '" }}, "id" : 1}',
 		onload : function(response) {
-			GM_log('Playing video');
+			console.log('Playing video');
 		}
 	});
 }
 
 function play_movie(video_url) {
-	GM_log('Trying to queue movie');
+	console.log('Trying to queue movie');
 	var xbmc_queue_depth = undefined;
 
 	/*
@@ -43,7 +43,7 @@ function play_movie(video_url) {
 					+ '"params":{"item": { "file" : "'
 					+ encode_video_url(video_url) + '" }}, "id" : 1}',
 			onload : function(response) {
-				GM_log('Playing video');
+				console.log('Playing video');
 			}
 		})
 	}, 3000);
@@ -58,7 +58,7 @@ function play_movie(video_url) {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
-				GM_log("No active players");
+				console.log("No active players");
 				return; // No active players
 			}
 			GM_xmlhttpRequest({
@@ -72,7 +72,7 @@ function play_movie(video_url) {
 				onload : function(response) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode != true) {
-						GM_log("Not in party mode, not queueing");
+						console.log("Not in party mode, not queueing");
 						return;
 					}
 					GM_xmlhttpRequest({
@@ -88,14 +88,14 @@ function play_movie(video_url) {
 							var xbmc_response = JSON
 									.parse(response.responseText);
 							if (xbmc_response.result.limits == undefined) {
-								GM_log("Error: Playlist.GetItems bad response");
+								console.log("Error: Playlist.GetItems bad response");
 								return;
 							}
 							// Queue exist, enqueue song at the end of user
 							// selection
 							clearTimeout(get_queue_timeout);
 							xbmc_queue_depth = xbmc_response.result.limits.end - 9;
-							GM_log("XBMC queue size is " + xbmc_queue_depth);
+							console.log("XBMC queue size is " + xbmc_queue_depth);
 							GM_xmlhttpRequest({
 								method : 'POST',
 								url : 'http://' + xbmc_address + '/jsonrpc',
@@ -116,7 +116,7 @@ function play_movie(video_url) {
 											+ '20px; -moz-border-radius-bottomleft:20px; '
 											+ '-webkit-border-top-left-radius:20px;  '
 											+ '-webkit-border-bottom-left-radius:20px; } ')
-									GM_log('Queueing video');
+									console.log('Queueing video');
 								}
 							})
 						}
@@ -156,7 +156,7 @@ function stop_movie() {
 }
 
 function add_play_on_xbmc_buttons(clip) {
-	GM_log('Found clip ' + clip);
+	console.log('Found clip ' + clip);
 	var xbmc = document.createElement('div');
 	xbmc.setAttribute('id', 'xbmc');
 
@@ -240,23 +240,23 @@ function add_play_on_xbmc_buttons(clip) {
  * Determine if the webpage has a valid media link, and add the buttons
  */
 //try {
-//	GM_log('Trying to get video id from video_id element');
+//	console.log('Trying to get video id from video_id element');
 //	var clip = unsafeWindow.yt.getConfig('VIDEO_ID');
 //} catch (Exception) {
-//	GM_log('Not found');
+//	console.log('Not found');
 //}
 //
 //if (clip == undefined) {
-//	GM_log('Trying to get video id from url');
+//	console.log('Trying to get video id from url');
 //	var clip;
 //
 //	var search = window.location.search.substring(1).split('&');
-//	GM_log('search = ' + search);
+//	console.log('search = ' + search);
 //
 //	for (i = 0; i < search.length; i++) {
 //		if (search[i].substring(0, 2) == 'v=') {
 //			var clip = search[i].substring(2);
-//			GM_log('Clip found using alternative method: ' + clip);
+//			console.log('Clip found using alternative method: ' + clip);
 //			break;
 //		}
 //	}
