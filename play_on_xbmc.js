@@ -2,6 +2,8 @@
 // Add a "Send to XBMC" on a webpage
 // It uses the old GM_*** API, and needs cleaning.
 
+const GM_log = console.log;
+
 /* ============================================================================
  * Site independent code here!!!!
  * */
