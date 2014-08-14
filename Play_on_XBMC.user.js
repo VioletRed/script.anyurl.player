@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name        Play on XBMC
-// @namespace   user@helio
+// @namespace   user@violet.local
 // @description Resolve and play media on XBMC
 // @date        2014-08-14
-// @version     0.2
+// @version     0.3
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -12,6 +12,7 @@
 // @grant       GM_xmlhttpRequest
 // @grant       GM_log
 // @require     https://gist.githubusercontent.com/VioletRed/9577d8c062f3ff056c59/raw/play_on_xbmc.js
+// @updateURL   https://gist.github.com/VioletRed/9577d8c062f3ff056c59/raw/Play_on_XBMC.user.js
 
 // ==/UserScript==
 // Simple script to send media to XBMC. 
@@ -80,10 +81,10 @@ var supported_hosts = [ "180upload.com", "2gb-hosting.com", "allmyvideos.net",
 		"videoboxone.com", "videofun.me", "videomega.tv", "videotanker.co",
 		"videoweed.es", "videozed.net", "videozer.com", "vidhog.com",
 		"vidpe.com", "vidplay.net", "vidspot.net", "vidstream.in", "vidto.me",
-		"vidup.org", "vidxden.com", "vidzur.com", "vk.com", "vodlocker.com",
-		"vureel.com", "watchfreeinhd.com", "xvidstage.com", "yourupload.com",
-		"youwatch.org", "zalaa.com", "zooupload.com", "zshare.net",
-		"zuzvideo.com" ];
+		"vidup.org", "vidxden.com", "vidzur.com", "vimeo.com", "vk.com",
+		"vodlocker.com", "vureel.com", "watchfreeinhd.com", "xvidstage.com",
+		"yourupload.com", "youtube.com", "youtu.be", "youwatch.org",
+		"zalaa.com", "zooupload.com", "zshare.net", "zuzvideo.com" ];
 
 function binarySearch(items, value) {
 
@@ -116,7 +117,7 @@ var clip = document.URL;
 var host = window.location.host;
 
 if (binarySearch(supported_hosts, host.toLowerCase()) >= 0) {
-	console.log("Supported host "+host)
+	console.log("Supported host " + host)
 
 	add_play_on_xbmc_buttons(clip)
 }
