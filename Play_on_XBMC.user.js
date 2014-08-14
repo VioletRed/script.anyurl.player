@@ -3,132 +3,8 @@
 // @namespace   user@helio
 // @description Resolve and play media on XBMC
 // @date        2014-08-14
-// @include *.180upload.com/*
-// @include *.2gb-hosting.com/*
-// @include *.allmyvideos.net/*
-// @include *.auengine.com/*
-// @include *.bayfiles.com/*
-// @include *.bestreams.net/*
-// @include *.billionuploads.com/*
-// @include *.castamp.com/*
-// @include *.cheesestream.com/*
-// @include *.clicktoview.org/*
-// @include *.cloudy.ch/*
-// @include *.cloudy.com/*
-// @include *.cloudy.ec/*
-// @include *.cloudy.eu/*
-// @include *.cloudy.sx/*
-// @include *.crunchyroll.com/*
-// @include *.cyberlocker.ch/*
-// @include *.daclips.com/*
-// @include *.daclips.in/*
-// @include *.dailymotion.com/*
-// @include *.divxden.com/*
-// @include *.divxstage.eu/*
-// @include *.divxstage.net/*
-// @include *.divxstage.to/*
-// @include *.donevideo.com/*
-// @include *.ecostream.tv/*
-// @include *.entroupload.com/*
-// @include *.facebook.com/*
-// @include *.filebox.com/*
-// @include *.filedrive.com/*
-// @include *.filenuke.com/*
-// @include *.firedrive.com/*
-// @include *.flashx.tv/*
-// @include *.gorillavid.com/*
-// @include *.gorillavid.in/*
-// @include *.hostingbulk.com/*
-// @include *.hostingcup.com/*
-// @include *.hugefiles.net/*
-// @include *.jumbofiles.com/*
-// @include *.lemuploads.com/*
-// @include *.limevideo.net/*
-// @include *.megarelease.org/*
-// @include *.mega-vids.com/*
-// @include *.mightyupload.com/*
-// @include *.mooshare.biz/*
-// @include *.movdivx.com/*
-// @include *.movpod.in/*
-// @include *.movpod.net/*
-// @include *.movreel.com/*
-// @include *.movshare.net/*
-// @include *.movzap.com/*
-// @include *.mp4stream.com/*
-// @include *.mp4upload.com/*
-// @include *.mrfile.me/*
-// @include *.muchshare.net/*
-// @include *.nolimitvideo.com/*
-// @include *.nosvideo.com/*
-// @include *.novamov.com/*
-// @include *.nowvideo.ch/*
-// @include *.nowvideo.eu/*
-// @include *.nowvideo.sx/*
-// @include *.ovile.com/*
-// @include *.play44.net/*
-// @include *.played.to/*
-// @include *.playwire.com/*
-// @include *.primeshare.tv/*
-// @include *.promptfile.com/*
-// @include *.purevid.com/*
-// @include *.putlocker.com/*
-// @include *.rapidvideo.com/*
-// @include *.seeon.tv/*
-// @include *.shared.sx/*
-// @include *.sharefiles4u.com/*
-// @include *.sharerepo.com/*
-// @include *.sharesix.com/*
-// @include *.sharevid.org/*
-// @include *.skyload.net/*
-// @include *.slickvid.com/*
-// @include *.sockshare.com/*
-// @include *.stagevu.com/*
-// @include *.stream2k.com/*
-// @include *.streamcloud.eu/*
-// @include *.thefile.me/*
-// @include *.trollvid.net/*
-// @include *.tubeplus.me/*
-// @include *.tune.pk/*
-// @include *.ufliq.com/*
-// @include *.uploadc.com/*
-// @include *.uploadcrazy.net/*
-// @include *.veehd.com/*
-// @include *.veoh.com/*
-// @include *.vidbull.com/*
-// @include *.vidbux.com/*
-// @include *.vidcrazy.net/*
-// @include *.video44.net/*
-// @include *.videobb.com/*
-// @include *.videoboxone.com/*
-// @include *.videofun.me/*
-// @include *.videomega.tv/*
-// @include *.videotanker.co/*
-// @include *.videoweed.es/*
-// @include *.videozed.net/*
-// @include *.videozer.com/*
-// @include *.vidhog.com/*
-// @include *.vidpe.com/*
-// @include *.vidplay.net/*
-// @include *.vidspot.net/*
-// @include *.vidstream.in/*
-// @include *.vidto.me/*
-// @include *.vidup.org/*
-// @include *.vidxden.com/*
-// @include *.vidzur.com/*
-// @include *.vimeo.com/*
-// @include *.vk.com/*
-// @include *.vodlocker.com/*
-// @include *.vureel.com/*
-// @include *.watchfreeinhd.com/*
-// @include *.xvidstage.com/*
-// @include *.yourupload.com/*
-// @include *.youtu.be/*
-// @include *.youtube.com/*
-// @include *.youwatch.org/*
-// @include *.zalaa.com/*
-// @include *.zooupload.com/*
-// @include *.zshare.net/*
-// @include *.zuzvideo.com/*
+// @version     0.2
+// @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
 // @grant       GM_getValue
@@ -177,6 +53,59 @@ function modify_xbmc_playlist() {
  * Site dependent code here!!!!
  * ============================================================================
  */
+var supported_hosts = [ "180upload.com", "2gb-hosting.com", "allmyvideos.net",
+		"auengine.com", "bayfiles.com", "bestreams.net", "billionuploads.com",
+		"castamp.com", "cheesestream.com", "clicktoview.org", "cloudy.ch",
+		"cloudy.com", "cloudy.ec", "cloudy.eu", "cloudy.sx", "crunchyroll.com",
+		"cyberlocker.ch", "daclips.com", "daclips.in", "dailymotion.com",
+		"divxden.com", "divxstage.eu", "divxstage.net", "divxstage.to",
+		"donevideo.com", "ecostream.tv", "entroupload.com", "facebook.com",
+		"filebox.com", "filedrive.com", "filenuke.com", "firedrive.com",
+		"flashx.tv", "gorillavid.com", "gorillavid.in", "hostingbulk.com",
+		"hostingcup.com", "hugefiles.net", "jumbofiles.com", "lemuploads.com",
+		"limevideo.net", "megarelease.org", "mega-vids.com",
+		"mightyupload.com", "mooshare.biz", "movdivx.com", "movpod.in",
+		"movpod.net", "movreel.com", "movshare.net", "movzap.com",
+		"mp4stream.com", "mp4upload.com", "mrfile.me", "muchshare.net",
+		"nolimitvideo.com", "nosvideo.com", "novamov.com", "nowvideo.ch",
+		"nowvideo.eu", "nowvideo.sx", "ovile.com", "play44.net", "played.to",
+		"playwire.com", "primeshare.tv", "promptfile.com", "purevid.com",
+		"putlocker.com", "rapidvideo.com", "seeon.tv", "shared.sx",
+		"sharefiles4u.com", "sharerepo.com", "sharesix.com", "sharevid.org",
+		"skyload.net", "slickvid.com", "sockshare.com", "stagevu.com",
+		"stream2k.com", "streamcloud.eu", "thefile.me", "trollvid.net",
+		"tubeplus.me", "tune.pk", "ufliq.com", "uploadc.com",
+		"uploadcrazy.net", "veehd.com", "veoh.com", "vidbull.com",
+		"vidbux.com", "vidcrazy.net", "video44.net", "videobb.com",
+		"videoboxone.com", "videofun.me", "videomega.tv", "videotanker.co",
+		"videoweed.es", "videozed.net", "videozer.com", "vidhog.com",
+		"vidpe.com", "vidplay.net", "vidspot.net", "vidstream.in", "vidto.me",
+		"vidup.org", "vidxden.com", "vidzur.com", "vk.com", "vodlocker.com",
+		"vureel.com", "watchfreeinhd.com", "xvidstage.com", "yourupload.com",
+		"youwatch.org", "zalaa.com", "zooupload.com", "zshare.net",
+		"zuzvideo.com" ];
+
+function binarySearch(items, value) {
+
+	var startIndex = 0, stopIndex = items.length - 1, middle = Math
+			.floor((stopIndex + startIndex) / 2);
+
+	while (items[middle] != value && startIndex < stopIndex) {
+
+		// adjust search area
+		if (value < items[middle]) {
+			stopIndex = middle - 1;
+		} else if (value > items[middle]) {
+			startIndex = middle + 1;
+		}
+
+		// recalculate middle
+		middle = Math.floor((stopIndex + startIndex) / 2);
+	}
+
+	// make sure it's the right value
+	return (items[middle] != value) ? -1 : middle;
+}
 
 function encode_video_url(video_url) {
 	return 'plugin://script.video.anyurl/?mode=play_video&url='
@@ -184,5 +113,10 @@ function encode_video_url(video_url) {
 }
 
 var clip = document.URL;
-add_play_on_xbmc_buttons(clip)
+var host = window.location.host;
 
+if (binarySearch(supported_hosts, host.toLowerCase()) >= 0) {
+	console.log("Supported host "+host)
+
+	add_play_on_xbmc_buttons(clip)
+}
