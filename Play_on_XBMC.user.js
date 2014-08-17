@@ -3,7 +3,7 @@
 // @namespace   user@violet.local
 // @description Resolve and play media on XBMC
 // @date        2014-08-14
-// @version     0.4
+// @version     0.5
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -118,7 +118,7 @@ var clip = document.URL;
 var top_domain = /^www\.|^m\.|^embed\./
 var host = window.location.host.toLowerCase().replace(top_domain, '');
 
-if (binarySearch(supported_hosts, host) >= 0) {
+if (binarySearch(supported_hosts, host) >= 0 && top == self) {
 	add_play_on_xbmc_buttons(clip)
 } else {
 	console.log("Unsupported host " + clip)
