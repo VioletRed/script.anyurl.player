@@ -3,7 +3,7 @@
 // @namespace   user@violet.local
 // @description Resolve and play media on XBMC
 // @date        2014-08-14
-// @version     0.3
+// @version     0.4
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -83,7 +83,7 @@ var supported_hosts = [ "180upload.com", "2gb-hosting.com", "allmyvideos.net",
 		"vidpe.com", "vidplay.net", "vidspot.net", "vidstream.in", "vidto.me",
 		"vidup.org", "vidxden.com", "vidzur.com", "vimeo.com", "vk.com",
 		"vodlocker.com", "vureel.com", "watchfreeinhd.com", "xvidstage.com",
-		"yourupload.com", "youtube.com", "youtu.be", "youwatch.org",
+		"yourupload.com", "youtu.be", "youtube.com", "youwatch.org",
 		"zalaa.com", "zooupload.com", "zshare.net", "zuzvideo.com" ];
 
 function binarySearch(items, value) {
@@ -92,7 +92,6 @@ function binarySearch(items, value) {
 			.floor((stopIndex + startIndex) / 2);
 
 	while (items[middle] != value && startIndex < stopIndex) {
-
 		// adjust search area
 		if (value < items[middle]) {
 			stopIndex = middle - 1;
@@ -114,10 +113,13 @@ function encode_video_url(video_url) {
 }
 
 var clip = document.URL;
-var host = window.location.host;
 
-if (binarySearch(supported_hosts, host.toLowerCase()) >= 0) {
-	console.log("Supported host " + host)
+// Remove known top domain names (i.e 'www', 'm', 'embed')
+var top_domain = /^www\.|^m\.|^embed\./
+var host = window.location.host.toLowerCase().replace(top_domain, '');
 
+if (binarySearch(supported_hosts, host) >= 0) {
 	add_play_on_xbmc_buttons(clip)
+} else {
+	console.log("Unsupported host " + clip)
 }
