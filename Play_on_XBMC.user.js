@@ -1,9 +1,13 @@
 // ==UserScript==
 // @name        Play on XBMC
 // @namespace   user@violet.local
+//
 // @description Resolve and play media on XBMC
+// @description Use with AnyURL plugin from:
+// @description         https://github.com/VioletRed/script.video.anyurl
+//
 // @date        2014-08-14
-// @version     0.5
+// @version     0.6
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
