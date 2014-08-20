@@ -11,15 +11,42 @@ function play_movie_directly(video_url) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {"Content-type": "application/json"},
+		headers : {
+			"Content-type" : "application/json"
+		},
 		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
 				+ '"params":{"item": { "file" : "'
-				+ '"plugin://plugin.video.youtube/?action=play_video&videoid='
-				+ video_url.replace('v=', '') + '" }}, "id" : 1}',
+				+ encode_video_url(video_url) + '" }}, "id" : 1}',
 		onload : function(response) {
 			console.log('Playing video');
 		}
 	});
+}
+
+function queue_movie(video_url, xbmc_playlist, xbmc_queuw_depth ) {
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {"Content-type": "application/json"},
+		data : '{"jsonrpc": "2.0", "method": "Playlist.Insert", '
+				+ '"params":{"item": { "file" : "'
+				+ encode_video_url(video_url)
+				+ '" }, "playlistid" :'
+				+ xbmc_playlist
+				+ ', "position" : '
+				+ xbmc_queue_depth
+				+ ' }, "id" : 1}',
+		onload : function(response) {
+			xbmc_queued = true;
+			GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; '
+					+ 'z-index:100; bottom:0; right:0; display:block; '
+					+ 'background:#400808; -moz-border-radius-topleft: '
+					+ '20px; -moz-border-radius-bottomleft:20px; '
+					+ '-webkit-border-top-left-radius:20px;  '
+					+ '-webkit-border-bottom-left-radius:20px; } ')
+			console.log('Queueing video');
+		}
+	})
 }
 
 function play_movie(video_url) {
@@ -60,7 +87,9 @@ function play_movie(video_url) {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
-				console.log("No active players");
+				console.log("No active players, play now");
+				clearTimeout(get_queue_timeout);
+				play_movie_directly(video_url)
 				return; // No active players
 			}
 			GM_xmlhttpRequest({
@@ -75,6 +104,8 @@ function play_movie(video_url) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode != true) {
 						console.log("Not in party mode, not queueing");
+						clearTimeout(get_queue_timeout);
+						play_movie_directly(video_url)
 						return;
 					}
 					GM_xmlhttpRequest({
@@ -93,7 +124,7 @@ function play_movie(video_url) {
 								console.log("Error: Playlist.GetItems bad response");
 								return;
 							}
-							// Queue exist, enqueue song at the end of user
+							// Queue exist, enqueue media at the end of user
 							// selection
 							clearTimeout(get_queue_timeout);
 							xbmc_queue_depth = xbmc_response.result.limits.end - 9;
