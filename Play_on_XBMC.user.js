@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
 // @date        2014-08-14
-// @version     0.8
+// @version     0.9
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -311,32 +311,33 @@ var supported_hosts = [ '180upload.com', '2gb-hosting.com', 'allmyvideos.net',
 		'cloudy.com', 'cloudy.ec', 'cloudy.eu', 'cloudy.sx', 'crunchyroll.com',
 		'cyberlocker.ch', 'daclips.com', 'daclips.in', 'dailymotion.com',
 		'divxden.com', 'divxstage.eu', 'divxstage.net', 'divxstage.to',
-		'donevideo.com', 'ecostream.tv', 'entroupload.com', 'facebook.com',
-		'filebox.com', 'filedrive.com', 'filenuke.com', 'firedrive.com',
-		'flashx.tv', 'gorillavid.com', 'gorillavid.in', 'hostingbulk.com',
-		'hostingcup.com', 'hugefiles.net', 'jumbofiles.com', 'lemuploads.com',
-		'limevideo.net', 'megarelease.org', 'mega-vids.com',
-		'mightyupload.com', 'mooshare.biz', 'movdivx.com', 'movieshd.co',
-		'movpod.in', 'movpod.net', 'movreel.com', 'movshare.net', 'movzap.com',
-		'mp4stream.com', 'mp4upload.com', 'mrfile.me', 'muchshare.net',
-		'nolimitvideo.com', 'nosvideo.com', 'novamov.com', 'nowvideo.ch',
-		'nowvideo.eu', 'nowvideo.sx', 'ovile.com', 'play44.net', 'played.to',
-		'playwire.com', 'primeshare.tv', 'promptfile.com', 'purevid.com',
-		'putlocker.com', 'rapidvideo.com', 'seeon.tv', 'shared.sx',
-		'sharefiles4u.com', 'sharerepo.com', 'sharesix.com', 'sharevid.org',
-		'skyload.net', 'slickvid.com', 'sockshare.com', 'stagevu.com',
-		'stream2k.com', 'streamcloud.eu', 'thefile.me', 'thevideo.me',
-		'trollvid.net', 'tubeplus.me', 'tune.pk', 'ufliq.com', 'uploadc.com',
+		'donevideo.com', 'ecostream.tv', 'entroupload.com', 'filebox.com',
+		'filedrive.com', 'filenuke.com', 'firedrive.com', 'flashx.tv',
+		'gorillavid.com', 'gorillavid.in', 'hostingbulk.com', 'hostingcup.com',
+		'hugefiles.net', 'jumbofiles.com', 'lemuploads.com', 'limevideo.net',
+		'megarelease.org', 'mega-vids.com', 'mightyupload.com', 'mooshare.biz',
+		'movdivx.com', 'movieshd.co', 'movpod.in', 'movpod.net', 'movreel.com',
+		'movshare.net', 'movzap.com', 'mp4stream.com', 'mp4upload.com',
+		'mrfile.me', 'muchshare.net', 'nolimitvideo.com', 'nosvideo.com',
+		'novamov.com', 'nowvideo.ch', 'nowvideo.eu', 'nowvideo.sx',
+		'ovile.com', 'play44.net', 'played.to', 'playwire.com',
+		'primeshare.tv', 'promptfile.com', 'purevid.com', 'putlocker.com',
+		'rapidvideo.com', 'seeon.tv', 'shared.sx', 'sharefiles4u.com',
+		'sharerepo.com', 'sharesix.com', 'sharevid.org', 'skyload.net',
+		'slickvid.com', 'sockshare.com', 'stagevu.com', 'stream2k.com',
+		'streamcloud.eu', 'thefile.me', 'thevideo.me', 'trollvid.net',
+		'tubeplus.me', 'tune.pk', 'ufliq.com', 'uploadc.com',
 		'uploadcrazy.net', 'veehd.com', 'veoh.com', 'vidbull.com',
 		'vidbux.com', 'vidcrazy.net', 'video44.net', 'videobb.com',
-		'videoboxone.com', 'videofun.me', 'videomega.tv', 'videotanker.co',
-		'videoweed.es', 'videozed.net', 'videozer.com', 'vidhog.com',
-		'vidpe.com', 'vidplay.net', 'vidspot.net', 'vidstream.in', 'vidto.me',
-		'vidup.org', 'vidxden.com', 'vidzi.tv', 'vidzur.com', 'vimeo.com',
-		'vk.com', 'vodlocker.com', 'vureel.com', 'watchfreeinhd.com',
-		'xvidstage.com', 'yourupload.com', 'youtu.be', 'youtube.com',
-		'youwatch.org', 'zalaa.com', 'zooupload.com', 'zshare.net',
-		'zuzvideo.com' ];
+		'videoboxone.com', 'videofun.me', 'videomega.tv', 'videoraj.ch',
+		'videoraj.com', 'videoraj.ec', 'videoraj.eu', 'videoraj.sx',
+		'videotanker.co', 'videoweed.es', 'videozed.net', 'videozer.com',
+		'vidhog.com', 'vidpe.com', 'vidplay.net', 'vidspot.net',
+		'vidstream.in', 'vidto.me', 'vidup.org', 'vidxden.com', 'vidzi.tv',
+		'vidzur.com', 'vimeo.com', 'vk.com', 'vodlocker.com', 'vureel.com',
+		'watchfreeinhd.com', 'xvidstage.com', 'yourupload.com', 'youtu.be',
+		'youtube.com', 'youwatch.org', 'zalaa.com', 'zooupload.com',
+		'zshare.net', 'zuzvideo.com' ];
 
 function binarySearch(items, value) {
 
