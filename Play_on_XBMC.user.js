@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
 // @date        2014-08-14
-// @version     0.7
+// @version     0.8
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -52,15 +52,16 @@ function modify_xbmc_playlist() {
 	GM_setValue("XBMC_PLAYLIST", xbmc_playlist);
 }
 
-//==/UserScript==
-//Add a "Send to XBMC" on a webpage
-//It uses the old GM_*** API, and needs cleaning.
+// ==/UserScript==
+// Add a "Send to XBMC" on a webpage
+// It uses the old GM_*** API, and needs cleaning.
 
-//const GM_log = console.log;
+// const GM_log = console.log;
 
-/* ============================================================================
-* Site independent code here!!!!
-* */
+/*
+ * ============================================================================
+ * Site independent code here!!!!
+ */
 function play_movie_directly(video_url) {
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -77,18 +78,17 @@ function play_movie_directly(video_url) {
 	});
 }
 
-function queue_movie(video_url, xbmc_playlist, xbmc_queuw_depth ) {
+function queue_movie(video_url, xbmc_playlist, xbmc_queuw_depth) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {"Content-type": "application/json"},
+		headers : {
+			"Content-type" : "application/json"
+		},
 		data : '{"jsonrpc": "2.0", "method": "Playlist.Insert", '
 				+ '"params":{"item": { "file" : "'
-				+ encode_video_url(video_url)
-				+ '" }, "playlistid" :'
-				+ xbmc_playlist
-				+ ', "position" : '
-				+ xbmc_queue_depth
+				+ encode_video_url(video_url) + '" }, "playlistid" :'
+				+ xbmc_playlist + ', "position" : ' + xbmc_queue_depth
 				+ ' }, "id" : 1}',
 		onload : function(response) {
 			xbmc_queued = true;
@@ -108,33 +108,20 @@ function play_movie(video_url) {
 	var xbmc_queue_depth = undefined;
 
 	/*
-	 * Logic goes like this: First, try to queue the video. 
-	 * If it fails, play video directly. Because AJAX is asynchronous, 
-	 * we use a timer for "direct play", and cancel it if we succeed to queue 
-	 * the video where we want
+	 * Logic goes like this: First, try to queue the video. If it fails, play
+	 * video directly. Because AJAX is asynchronous, we use a timer for "direct
+	 * play", and cancel it if we succeed to queue the video where we want
 	 */
 	if (video_url == undefined || xbmc_queued) {
 		return;
 	}
-	// Queue at the end by default
-	var get_queue_timeout = setTimeout(function() {
-		GM_xmlhttpRequest({
-			method : 'POST',
-			url : 'http://' + xbmc_address + '/jsonrpc',
-			headers : {"Content-type": "application/json"},
-			data : '{"jsonrpc": "2.0", "method": "Player.Open", '
-					+ '"params":{"item": { "file" : "'
-					+ encode_video_url(video_url) + '" }}, "id" : 1}',
-			onload : function(response) {
-				console.log('Playing video');
-			}
-		})
-	}, 3000);
 	// Get the current playlist
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {"Content-type": "application/json"},
+		headers : {
+			"Content-type" : "application/json"
+		},
 		data : '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers",'
 				+ '"params":{}, "id" : 1}',
 		onload : function(response) {
@@ -142,14 +129,15 @@ function play_movie(video_url) {
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
 				console.log("No active players, play now");
-				clearTimeout(get_queue_timeout);
 				play_movie_directly(video_url)
 				return; // No active players
 			}
 			GM_xmlhttpRequest({
 				method : 'POST',
 				url : 'http://' + xbmc_address + '/jsonrpc',
-				headers : {"Content-type": "application/json"},
+				headers : {
+					"Content-type" : "application/json"
+				},
 				data : '{"jsonrpc": "2.0", "method": "Player.GetProperties",'
 						+ '"params":{"playerid" : '
 						+ xbmc_active.result[0].playerid
@@ -158,35 +146,38 @@ function play_movie(video_url) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode != true) {
 						console.log("Not in party mode, not queueing");
-						clearTimeout(get_queue_timeout);
 						play_movie_directly(video_url)
 						return;
 					}
 					GM_xmlhttpRequest({
 						method : 'POST',
 						url : 'http://' + xbmc_address + '/jsonrpc',
-						headers : {"Content-type": "application/json"},
+						headers : {
+							"Content-type" : "application/json"
+						},
 						data : '{"jsonrpc": "2.0", "method": "Playlist.GetItems",'
 								+ '"params":{"playlistid" : '
 								+ xbmc_playlist
 								+ '}, "id" : 1}',
 						onload : function(response) {
-							xbmc_queued = true;
 							var xbmc_response = JSON
 									.parse(response.responseText);
 							if (xbmc_response.result.limits == undefined) {
-								console.log("Error: Playlist.GetItems bad response");
+								console
+										.log("Error: Playlist.GetItems bad response");
 								return;
 							}
 							// Queue exist, enqueue media at the end of user
 							// selection
-							clearTimeout(get_queue_timeout);
 							xbmc_queue_depth = xbmc_response.result.limits.end - 9;
-							console.log("XBMC queue size is " + xbmc_queue_depth);
+							console.log("XBMC queue size is "
+									+ xbmc_queue_depth);
 							GM_xmlhttpRequest({
 								method : 'POST',
 								url : 'http://' + xbmc_address + '/jsonrpc',
-								headers : {"Content-type": "application/json"},
+								headers : {
+									"Content-type" : "application/json"
+								},
 								data : '{"jsonrpc": "2.0", "method": "Playlist.Insert", '
 										+ '"params":{"item": { "file" : "'
 										+ encode_video_url(video_url)
@@ -309,43 +300,43 @@ function add_play_on_xbmc_buttons(clip) {
 	GM_addStyle('#btPause:hover { background: url("data:image/png;base64,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") no-repeat; } ')
 }
 
-
 /*
  * ============================================================================
  * Site dependent code here!!!!
  * ============================================================================
  */
-var supported_hosts = [ "180upload.com", "2gb-hosting.com", "allmyvideos.net",
-		"auengine.com", "bayfiles.com", "bestreams.net", "billionuploads.com",
-		"castamp.com", "cheesestream.com", "clicktoview.org", "cloudy.ch",
-		"cloudy.com", "cloudy.ec", "cloudy.eu", "cloudy.sx", "crunchyroll.com",
-		"cyberlocker.ch", "daclips.com", "daclips.in", "dailymotion.com",
-		"divxden.com", "divxstage.eu", "divxstage.net", "divxstage.to",
-		"donevideo.com", "ecostream.tv", "entroupload.com", "facebook.com",
-		"filebox.com", "filedrive.com", "filenuke.com", "firedrive.com",
-		"flashx.tv", "gorillavid.com", "gorillavid.in", "hostingbulk.com",
-		"hostingcup.com", "hugefiles.net", "jumbofiles.com", "lemuploads.com",
-		"limevideo.net", "megarelease.org", "mega-vids.com",
-		"mightyupload.com", "mooshare.biz", "movdivx.com", "movpod.in",
-		"movpod.net", "movreel.com", "movshare.net", "movzap.com",
-		"mp4stream.com", "mp4upload.com", "mrfile.me", "muchshare.net",
-		"nolimitvideo.com", "nosvideo.com", "novamov.com", "nowvideo.ch",
-		"nowvideo.eu", "nowvideo.sx", "ovile.com", "play44.net", "played.to",
-		"playwire.com", "primeshare.tv", "promptfile.com", "purevid.com",
-		"putlocker.com", "rapidvideo.com", "seeon.tv", "shared.sx",
-		"sharefiles4u.com", "sharerepo.com", "sharesix.com", "sharevid.org",
-		"skyload.net", "slickvid.com", "sockshare.com", "stagevu.com",
-		"stream2k.com", "streamcloud.eu", "thefile.me", "trollvid.net",
-		"tubeplus.me", "tune.pk", "ufliq.com", "uploadc.com",
-		"uploadcrazy.net", "veehd.com", "veoh.com", "vidbull.com",
-		"vidbux.com", "vidcrazy.net", "video44.net", "videobb.com",
-		"videoboxone.com", "videofun.me", "videomega.tv", "videotanker.co",
-		"videoweed.es", "videozed.net", "videozer.com", "vidhog.com",
-		"vidpe.com", "vidplay.net", "vidspot.net", "vidstream.in", "vidto.me",
-		"vidup.org", "vidxden.com", "vidzur.com", "vimeo.com", "vk.com",
-		"vodlocker.com", "vureel.com", "watchfreeinhd.com", "xvidstage.com",
-		"yourupload.com", "youtu.be", "youtube.com", "youwatch.org",
-		"zalaa.com", "zooupload.com", "zshare.net", "zuzvideo.com" ];
+var supported_hosts = [ '180upload.com', '2gb-hosting.com', 'allmyvideos.net',
+		'auengine.com', 'bayfiles.com', 'bestreams.net', 'billionuploads.com',
+		'castamp.com', 'cheesestream.com', 'clicktoview.org', 'cloudy.ch',
+		'cloudy.com', 'cloudy.ec', 'cloudy.eu', 'cloudy.sx', 'crunchyroll.com',
+		'cyberlocker.ch', 'daclips.com', 'daclips.in', 'dailymotion.com',
+		'divxden.com', 'divxstage.eu', 'divxstage.net', 'divxstage.to',
+		'donevideo.com', 'ecostream.tv', 'entroupload.com', 'facebook.com',
+		'filebox.com', 'filedrive.com', 'filenuke.com', 'firedrive.com',
+		'flashx.tv', 'gorillavid.com', 'gorillavid.in', 'hostingbulk.com',
+		'hostingcup.com', 'hugefiles.net', 'jumbofiles.com', 'lemuploads.com',
+		'limevideo.net', 'megarelease.org', 'mega-vids.com',
+		'mightyupload.com', 'mooshare.biz', 'movdivx.com', 'movieshd.co',
+		'movpod.in', 'movpod.net', 'movreel.com', 'movshare.net', 'movzap.com',
+		'mp4stream.com', 'mp4upload.com', 'mrfile.me', 'muchshare.net',
+		'nolimitvideo.com', 'nosvideo.com', 'novamov.com', 'nowvideo.ch',
+		'nowvideo.eu', 'nowvideo.sx', 'ovile.com', 'play44.net', 'played.to',
+		'playwire.com', 'primeshare.tv', 'promptfile.com', 'purevid.com',
+		'putlocker.com', 'rapidvideo.com', 'seeon.tv', 'shared.sx',
+		'sharefiles4u.com', 'sharerepo.com', 'sharesix.com', 'sharevid.org',
+		'skyload.net', 'slickvid.com', 'sockshare.com', 'stagevu.com',
+		'stream2k.com', 'streamcloud.eu', 'thefile.me', 'thevideo.me',
+		'trollvid.net', 'tubeplus.me', 'tune.pk', 'ufliq.com', 'uploadc.com',
+		'uploadcrazy.net', 'veehd.com', 'veoh.com', 'vidbull.com',
+		'vidbux.com', 'vidcrazy.net', 'video44.net', 'videobb.com',
+		'videoboxone.com', 'videofun.me', 'videomega.tv', 'videotanker.co',
+		'videoweed.es', 'videozed.net', 'videozer.com', 'vidhog.com',
+		'vidpe.com', 'vidplay.net', 'vidspot.net', 'vidstream.in', 'vidto.me',
+		'vidup.org', 'vidxden.com', 'vidzi.tv', 'vidzur.com', 'vimeo.com',
+		'vk.com', 'vodlocker.com', 'vureel.com', 'watchfreeinhd.com',
+		'xvidstage.com', 'yourupload.com', 'youtu.be', 'youtube.com',
+		'youwatch.org', 'zalaa.com', 'zooupload.com', 'zshare.net',
+		'zuzvideo.com' ];
 
 function binarySearch(items, value) {
 
