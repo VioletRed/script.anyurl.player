@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
-// @date        2014-08-14
-// @version     0.9
+// @date        2014-11-09
+// @version     10
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -27,7 +27,7 @@
 
 var xbmc_address = GM_getValue('XBMC_ADDRESS');
 var xbmc_playlist = GM_getValue('XBMC_PLAYLIST');
-var xbmc_queued = false;
+var xbmc_queued = null;
 
 GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
 GM_registerMenuCommand('Select XBMC playlist', modify_xbmc_playlist);
@@ -91,7 +91,7 @@ function queue_movie(video_url, xbmc_playlist, xbmc_queuw_depth) {
 				+ xbmc_playlist + ', "position" : ' + xbmc_queue_depth
 				+ ' }, "id" : 1}',
 		onload : function(response) {
-			xbmc_queued = true;
+			xbmc_queued = video_url;
 			GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; '
 					+ 'z-index:100; bottom:0; right:0; display:block; '
 					+ 'background:#400808; -moz-border-radius-topleft: '
@@ -103,7 +103,8 @@ function queue_movie(video_url, xbmc_playlist, xbmc_queuw_depth) {
 	})
 }
 
-function play_movie(video_url) {
+function play_movie() {
+	video_url = document.documentURI
 	console.log('Trying to queue movie');
 	var xbmc_queue_depth = undefined;
 
@@ -112,7 +113,7 @@ function play_movie(video_url) {
 	 * video directly. Because AJAX is asynchronous, we use a timer for "direct
 	 * play", and cancel it if we succeed to queue the video where we want
 	 */
-	if (video_url == undefined || xbmc_queued) {
+	if (video_url == undefined || xbmc_queued == video_url) {
 		return;
 	}
 	// Get the current playlist
@@ -187,7 +188,7 @@ function play_movie(video_url) {
 										+ xbmc_queue_depth
 										+ ' }, "id" : 1}',
 								onload : function(response) {
-									xbmc_queued = true;
+									xbmc_queued = video_url;
 									GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; '
 											+ 'z-index:100; bottom:0; right:0; display:block; '
 											+ 'background:#400808; -moz-border-radius-topleft: '
@@ -233,8 +234,8 @@ function stop_movie() {
 			}, 250);
 }
 
-function add_play_on_xbmc_buttons(clip) {
-	console.log('Found clip ' + clip);
+function add_play_on_xbmc_buttons() {
+	console.log('Found clip ' + document.documentURI);
 	var xbmc = document.createElement('div');
 	xbmc.setAttribute('id', 'xbmc');
 
@@ -254,7 +255,7 @@ function add_play_on_xbmc_buttons(clip) {
 
 	var xbmc_play = document.createElement('span');
 	xbmc_play.addEventListener('click', function() {
-		play_movie(clip)
+		play_movie()
 	}, false);
 	xbmc_play.setAttribute('id', 'btPlay');
 	xbmc_play.setAttribute('title', 'Start playback');
@@ -365,14 +366,14 @@ function encode_video_url(video_url) {
 			+ encodeURIComponent(video_url);
 }
 
-var clip = document.URL;
+// var clip = document.URL;
 
 // Remove known top domain names (i.e 'www', 'm', 'embed')
 var top_domain = /^www\.|^m\.|^embed\./
 var host = window.location.host.toLowerCase().replace(top_domain, '');
 
 if (binarySearch(supported_hosts, host) >= 0 && top == self) {
-	add_play_on_xbmc_buttons(clip)
+	add_play_on_xbmc_buttons()
 } else {
-	console.log("Unsupported host " + clip)
+	console.log("Unsupported host " + document.documentURI)
 }
