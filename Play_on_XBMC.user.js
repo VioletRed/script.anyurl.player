@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
 // @date        2014-11-16
-// @version     11
+// @version     11.2
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -497,7 +497,7 @@ function add_play_on_xbmc_buttons() {
 
 	document.body.parentNode.insertBefore(xbmc, document.body);
 
-	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#080880; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
+	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#084040; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
 	GM_addStyle('#xbmc:hover { opacity: 0.6; } ')
 
 	GM_addStyle('#xbmcText { font-family:Terminal; font-size:12px; font-weight:bold; color:#a0a0a0 } ')
