@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
 // @date        2014-11-16
-// @version     11.2
+// @version     12
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -32,6 +32,12 @@ const xbmc_video_playlist = 1;
 //Remove known top domain names (i.e 'www', 'm', 'embed')
 var top_domain = /^www\.|^m\.|^embed\./
 var current_host = window.location.host.toLowerCase().replace(top_domain, '');
+
+// Global UI elements
+var xbmc_ui = null;
+var xbmc_title = null;
+var xbmc_play_control = null;
+var xbmc_msg_timer = null;
 
 
 GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
@@ -105,29 +111,49 @@ function play_movie_directly(video_url) {
 				+ '"params":{"item": { "file" : "'
 				+ encode_video_url(video_url) + '" }}, "id" : 1}',
 		onload : function(response) {
+			show_ui_msg("PLAYING", 2000);
 			console.log('Playing video');
 		}
 	});
+	/* Clear playlist */
+	setTimeout(
+			function() {
+				GM_xmlhttpRequest({
+					method : 'POST',
+					url : 'http://' + xbmc_address + '/jsonrpc',
+					headers : {
+						"Content-type" : "application/json"
+					},
+					timeout: 6000,
+					data : '{"jsonrpc": "2.0", "method": "Playlist.Clear", '
+						+ '"params":{"playlistid" : '+xbmc_video_playlist+'}, "id" : 1}',
+					onerror: xbmc_json_error,
+					ontimeout: xbmc_json_timeout,
+				});
+			}, 5000);
 }
 
 function open_video_playlist() {
+	console.log('New video queue');
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			"Content-type" : "application/json"
 		},
-		timeout: 6000,
 		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
 				+ '"params":{"item": { "playlistid" : ' + xbmc_video_playlist 
 				+ ' }}, "id" : 1}',
 		onload : function(response) {
 			console.log('Playing video');
+			show_ui_msg("PLAYING", 2000);
 		}
 	});
 }
 
 function dont_open_video_playlist() {
+	console.log('Queued video at the end ');
+	show_ui_msg("QUEUED", 5000);
 	return 0;
 }
 
@@ -176,14 +202,7 @@ function queue_movie_at(video_url, xbmc_playlist, xbmc_queue_depth) {
 		ontimeout: xbmc_json_timeout,
 		onload : function(response) {
 			xbmc_queued = video_url;
-			/*
-			GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; '
-					+ 'z-index:100; bottom:0; right:0; display:block; '
-					+ 'background:#400808; -moz-border-radius-topleft: '
-					+ '20px; -moz-border-radius-bottomleft:20px; '
-					+ '-webkit-border-top-left-radius:20px;  '
-					+ '-webkit-border-bottom-left-radius:20px; } ')
-			*/
+			show_ui_msg("QUEUEED", 5000);
 			console.log('Queueing video');
 		}
 	})
@@ -209,21 +228,12 @@ function queue_movie_last(video_url, last_step) {
 			var result = JSON.parse(response.responseText);
 			if (result.result == "OK") {
 					xbmc_queued = video_url;
-					console.log('Queued video at the end ');
 					last_step();
 					return 0;
 			}
 		},
-		timeout: 6000,
 		onerror: xbmc_json_error,
 		ontimeout: xbmc_json_timeout
-/*			GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; '
-					+ 'z-index:100; bottom:0; right:0; display:block; '
-					+ 'background:#400808; -moz-border-radius-topleft: '
-					+ '20px; -moz-border-radius-bottomleft:20px; '
-					+ '-webkit-border-top-left-radius:20px;  '
-					+ '-webkit-border-bottom-left-radius:20px; } ')
-*/
 	});
 	return -1;
 }
@@ -240,8 +250,7 @@ function queue_in_party_mode(video_url) {
 				+ xbmc_playlist
 				+ '}, "id" : 1}',
 		onload : function(response) {
-			var xbmc_response = JSON
-					.parse(response.responseText);
+			var xbmc_response = JSON.parse(response.responseText);
 			if (xbmc_response.result.limits == undefined) {
 				console.log("Error: Playlist.GetItems bad response");
 				return;
@@ -287,6 +296,7 @@ function play_movie() {
 	console.log('Trying to play/queue movie');
 	var xbmc_queue_depth = undefined;
 
+	show_ui_msg("LOADING", 30000);
 	/*
 	 * Logic goes like this: First, try to queue the video. If it fails, play
 	 * video directly. Because AJAX is asynchronous, we use a timer for "direct
@@ -342,6 +352,8 @@ function queue_movie() {
 	console.log('Trying queue movie/create new playlist');
 	var xbmc_queue_depth = undefined;
 
+	show_ui_msg("LOADING", 30000);
+
 	// Get the current playlist
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -394,56 +406,67 @@ function queue_movie() {
 
 /* Movie control functions */
 function pause_movie() {
-	setTimeout(
-			function() {
-				GM_xmlhttpRequest({
-					method : 'POST',
-					url : 'http://' + xbmc_address + '/jsonrpc',
-					headers : {
-						'Content-Type' : 'application/json'
-					},
-					data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":1}, "id" : 1}'
-				})
-			}, 250);
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			'Content-Type' : 'application/json'
+		},
+		data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":1}, "id" : 1}'
+	});
 }
 
 function stop_movie() {
-	setTimeout(
-			function() {
-				GM_xmlhttpRequest({
-					method : 'POST',
-					url : 'http://' + xbmc_address + '/jsonrpc',
-					headers : {
-						'Content-Type' : 'application/json'
-					},
-					data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":1}, "id" : 1}'
-				})
-			}, 250);
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			'Content-Type' : 'application/json'
+		},
+		data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":1}, "id" : 1}'
+	});
 	xbmc_queued = "";
 }
 
 function next_movie() {
-	setTimeout(
-			function() {
-				GM_xmlhttpRequest({
-					method : 'POST',
-					url : 'http://' + xbmc_address + '/jsonrpc',
-					headers : {
-						'Content-Type' : 'application/json'
-					},
-					data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 1, "to" : "next" }, "id" : 1}'
-				})
-			}, 250);
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			'Content-Type' : 'application/json'
+		},
+		data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 1, "to" : "next" }, "id" : 1}'
+	});
 	xbmc_queued = "";
 }
 
 /* UI functions */
+function remove_playing_msg() {
+	try {
+		xbmc_ui.removeChild(xbmc_title);
+	} catch (e) {
+		// catch and just suppress error
+	}
+	try {
+		clearTimeout(xbmc_msg_timer);
+	} catch (e) {
+		// catch and just suppress error
+	}
+}
+
+function show_ui_msg(msg, timeout) {
+	remove_playing_msg();
+	xbmc_title.innerHTML = msg;
+	xbmc_ui.insertBefore(xbmc_title,xbmc_play_control);
+	xbmc_msg_timer = setTimeout(remove_playing_msg, timeout);
+}
+
 function add_play_on_xbmc_buttons() {
 	console.log('Found clip ' + document.documentURI);
-	var xbmc = document.createElement('div');
-	xbmc.setAttribute('id', 'xbmc');
+	xbmc_ui = document.createElement('div');
+	xbmc_ui.setAttribute('id', 'xbmc');
 
-	var xbmc_play_control = document.createElement('div');
+	xbmc_play_control = document.createElement('div');
 	xbmc_play_control.setAttribute('id', 'playControl');
 
 	var xbmc_other_control = document.createElement('div');
@@ -452,10 +475,9 @@ function add_play_on_xbmc_buttons() {
 	var xbmc_playback_control = document.createElement('div');
 	xbmc_playback_control.setAttribute('id', 'playbackControl');
 
-	// Will have image here later, I guess
-	var xbmc_title = document.createElement('div');
+	xbmc_title = document.createElement('div');
 	xbmc_title.setAttribute('id', 'xbmcText');
-	xbmc_title.innerHTML = 'MENU';
+	xbmc_title.innerHTML = 'PLAYING';
 
 	var xbmc_play = document.createElement('span');
 	xbmc_play.addEventListener('click', function() {
@@ -485,22 +507,21 @@ function add_play_on_xbmc_buttons() {
 	xbmc_queue.setAttribute('title', 'Queue video');
 
 	xbmc_play_control.appendChild(xbmc_play);
-	//xbmc_other_control.appendChild(xbmc_title);
 	xbmc_playback_control.appendChild(xbmc_queue);
 	xbmc_playback_control.appendChild(xbmc_next);
 	xbmc_playback_control.appendChild(xbmc_pause);
 	xbmc_playback_control.appendChild(xbmc_stop);
 
 	xbmc_other_control.appendChild(xbmc_playback_control);
-	xbmc.appendChild(xbmc_play_control);
-	xbmc.appendChild(xbmc_other_control);
+	xbmc_ui.appendChild(xbmc_play_control);
+	xbmc_ui.appendChild(xbmc_other_control);
+	
+	document.body.parentNode.insertBefore(xbmc_ui, document.body);
 
-	document.body.parentNode.insertBefore(xbmc, document.body);
+	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#103040; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
+	GM_addStyle('#xbmc:hover { opacity: 0.7; } ')
 
-	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#084040; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
-	GM_addStyle('#xbmc:hover { opacity: 0.6; } ')
-
-	GM_addStyle('#xbmcText { font-family:Terminal; font-size:12px; font-weight:bold; color:#a0a0a0 } ')
+	GM_addStyle('#xbmcText { opacity:0.8; font-family:Terminal; text-align:center; font-size:12px; font-weight:bold; background:#401010; color:#a0a0a0 } ')
 
 	// Play control
 	GM_addStyle('#playControl span, #playbackPlay span:hover { width:40px; height:40px; float:left; display:block; padding-bottom:0px; -moz-background-size:40px; background-size:40px; -webkit-background-size:40px; -o-background-size:40px; -khtml-background-size:40px; cursor:pointer; } ')
