@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.video.anyurl"
        name="AnyURL Player"
-       version="0.0.2"
+       version="1.0"
        provider-name="Violet">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>

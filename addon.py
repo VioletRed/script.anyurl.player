@@ -25,12 +25,20 @@ if mode == 'play_video':
     try:
         url = args['url'][0]
         media_source = HostedMediaFile(url)
+        print "Resolving %s" % url
         file_url = media_source.resolve()
-        media_labels = media_source.get_media_labels()
-        li = xbmcgui.ListItem(label = media_labels['title'], path = file_url)
-        li.setThumbnailImage(media_labels['icon'])
-        xbmc.log("%s: Play video %s %s" % (addon_id, media_labels, file_url), xbmc.LOGNOTICE)
-        xbmc.Player().play(item = file_url, listitem = li)
+        if file_url:
+            media_labels = media_source.get_media_labels()
+            media_labels.setdefault('title')
+            li = xbmcgui.ListItem(label = media_labels['title'], path = file_url)
+            li.setProperty('IsPlayable', 'true')
+            # li.setThumbnailImage(media_labels['icon'])
+            xbmc.log("%s: Play video %s %s" % (addon_id, media_labels, file_url), xbmc.LOGNOTICE)
+            xbmc.Player().play(item = file_url, listitem = li)
+            # xbmcplugin.setResolvedUrl(addon_handle, succeeded=True, listitem=li)
+        else:
+            xbmc.log("%s: Non playable URL" % (addon_id), xbmc.LOGNOTICE)
+            # xbmcplugin.setResolvedUrl(addon_handle, succeeded=False, listitem=li)
     except KeyError:
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
     except:

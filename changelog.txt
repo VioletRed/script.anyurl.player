@@ -1,1 +1,4 @@
 Initial version
+
+// https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
+// https://gist.githubusercontent.com/VioletRed/9577d8c062f3ff056c59/raw/play_on_xbmc.js
