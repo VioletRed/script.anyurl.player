@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
-// @date        2014-11-16
-// @version     12
+// @date        2014-11-22
+// @version     13
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -18,62 +18,44 @@
 // @updateURL   https://gist.github.com/VioletRed/9577d8c062f3ff056c59/raw/Play_on_XBMC.user.js
 
 // ==/UserScript==
-// Simple script to send media to XBMC. 
-// It uses AnyURL plugin so it should be installed to make it work.
+// Simple script to send media to XBMC.
+// Supported plugins:
+// 	* Youtube
+//	* TED
+// 	* AnyURL plugin for other domains (https://github.com/VioletRed/script.video.anyurl).
+
+// ==/UserScript==
+// Add a "Send to XBMC" on a webpage
+// It uses the old GM_*** API, and needs cleaning.
 
 /* ============================================================================
  * Global config
  * */
 
 var xbmc_address = GM_getValue('XBMC_ADDRESS');
-var xbmc_playlist = GM_getValue('XBMC_PLAYLIST');
 var xbmc_queued = null;
-const xbmc_video_playlist = 1;
+const xbmc_music_playlist = 0; // Queue for party mode
+const xbmc_video_playlist = 1; // Queue for video mode
 //Remove known top domain names (i.e 'www', 'm', 'embed')
 var top_domain = /^www\.|^m\.|^embed\./
 var current_host = window.location.host.toLowerCase().replace(top_domain, '');
 
-// Global UI elements
+/*
+ * ============================================================================
+ * Global UI elements
+ * ============================================================================
+ */
 var xbmc_ui = null;
 var xbmc_title = null;
 var xbmc_play_control = null;
 var xbmc_msg_timer = null;
 
 
-GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
-GM_registerMenuCommand('XBMC partymode playlist', modify_xbmc_playlist);
-
-if (xbmc_address === undefined)
-	modify_xbmc_address();
-
-if (xbmc_playlist === undefined)
-	modify_xbmc_playlist();
-
-function modify_xbmc_address() {
-	xbmc_address = window
-			.prompt(
-					'Enter the address for the XBMC web interface\n(username:password@address:port)',
-					xbmc_address);
-	GM_setValue("XBMC_ADDRESS", xbmc_address);
-}
-
-function modify_xbmc_playlist() {
-	xbmc_playlist = window.prompt('Set the PARTYMODE playlist number (0 or 1)',
-			xbmc_playlist);
-	GM_setValue("XBMC_PLAYLIST", xbmc_playlist);
-}
-
-// ==/UserScript==
-// Add a "Send to XBMC" on a webpage
-// It uses the old GM_*** API, and needs cleaning.
-
-// const GM_log = console.log;
-
 /*
  * ============================================================================
  * Site independent code here!!!!
+ * ============================================================================
  */
-
 
 function xbmc_json_error(response) {
 	consoloe.log("XBMC JSON Error")
@@ -247,7 +229,7 @@ function queue_in_party_mode(video_url) {
 		},
 		data : '{"jsonrpc": "2.0", "method": "Playlist.GetItems",'
 				+ '"params":{"playlistid" : '
-				+ xbmc_playlist
+				+ xbmc_music_playlist
 				+ '}, "id" : 1}',
 		onload : function(response) {
 			var xbmc_response = JSON.parse(response.responseText);
@@ -260,7 +242,7 @@ function queue_in_party_mode(video_url) {
 			xbmc_queue_depth = xbmc_response.result.limits.end - 9;
 			console.log("XBMC queue size is "
 					+ xbmc_queue_depth);
-			queue_movie_at(video_url, xbmc_playlist, xbmc_queue_depth);
+			queue_movie_at(video_url, xbmc_music_playlist, xbmc_queue_depth);
 		}
 	})
 }
@@ -368,9 +350,8 @@ function queue_movie() {
 		onload : function(response) {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined
-					|| xbmc_active.result.length == 0
-					|| xbmc_active.result[0].playerid != 1) {
-				console.log("No active players or playing music, create a new queue");
+					|| xbmc_active.result.length == 0) {
+				console.log("No active players, create a new queue");
 				play_in_new_playlist(video_url);
 				return;
 			}
@@ -391,8 +372,13 @@ function queue_movie() {
 						queue_in_party_mode(video_url);
 						return;
 					}
-					console.log("Queue in playlist");
-					queue_in_playlist(video_url);
+					if (xbmc_active.result[0].playerid != 1) {
+						console.log("Playing music, create a new queue");
+						play_in_new_playlist(video_url);
+					} else {
+						console.log("Queue in playlist");
+						queue_in_playlist(video_url);
+					}
 				},
 				onerror: function(response) {
 					/* No active playlist */
@@ -404,7 +390,11 @@ function queue_movie() {
 	});
 }
 
-/* Movie control functions */
+/*
+ * ============================================================================
+ * Movie control functions 
+ * ============================================================================
+ */
 function pause_movie() {
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -440,7 +430,25 @@ function next_movie() {
 	xbmc_queued = "";
 }
 
-/* UI functions */
+/*
+ * ============================================================================
+ * UI functions 
+ * ============================================================================
+ */
+function modify_xbmc_address() {
+	xbmc_address = window
+			.prompt(
+					'Enter the address for the XBMC web interface\n(username:password@address:port)',
+					xbmc_address);
+	GM_setValue("XBMC_ADDRESS", xbmc_address);
+}
+
+//function modify_xbmc_playlist() {
+//	xbmc_music_playlist = window.prompt('Set the PARTYMODE playlist number (0 or 1)',
+//			xbmc_music_playlist);
+//	GM_setValue("XBMC_PLAYLIST", xbmc_music_playlist);
+//}
+
 function remove_playing_msg() {
 	try {
 		xbmc_ui.removeChild(xbmc_title);
@@ -619,12 +627,15 @@ function encode_video_url_for_queueing(video_url) {
 	switch (current_host) {
 	case "youtube.com":
 	case "youtu.be":
-		/* Queue only current video, ignore playlists and similar */
+		/* Youtube has it's own playlists, but Kodi doesn't support 
+		 * queueing a list within another list.
+		 * Thus, we queue only current video. */
 		var yt_params = parse_yt_params(video_url);
 		return 'plugin://plugin.video.youtube/?action=play_video&videoid='
 				+ yt_params["v"];
 		break;
 	}
+	/* All other domains use the same URI for queueing and playing */
 	return encode_video_url(video_url);
 }
 
@@ -658,6 +669,14 @@ function encode_video_url(video_url) {
 
 /* Add buttons only if necessary */
 if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
+	GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
+	// GM_registerMenuCommand('XBMC partymode playlist', modify_xbmc_playlist);
+    // First run?
+	if (xbmc_address === undefined)
+		modify_xbmc_address();
+	//if (xbmc_music_playlist === undefined)
+	//	modify_xbmc_playlist();
+
 	add_play_on_xbmc_buttons()
 } else {
 	console.log("Unsupported host " + document.documentURI)
