@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
-// @date        2014-11-22
-// @version     13
+// @date        2014-12-26
+// @version     14
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -631,7 +631,7 @@ function encode_video_url_for_queueing(video_url) {
 		 * queueing a list within another list.
 		 * Thus, we queue only current video. */
 		var yt_params = parse_yt_params(video_url);
-		return 'plugin://plugin.video.youtube/?action=play_video&videoid='
+		return 'plugin://plugin.video.youtube.bromix/play/?video_id='
 				+ yt_params["v"];
 		break;
 	}
@@ -646,15 +646,15 @@ function encode_video_url(video_url) {
 		/* Better talk to YouTube plugin directly, it allows for more flexible use */
 		var yt_params = parse_yt_params(video_url);
 		if (yt_params["list"]) {
-			result = 'plugin://plugin.video.youtube/?action=play_all&playlist='
+			result = 'plugin://plugin.video.youtube.bromix/play/?playlist_id='
 				+ yt_params["list"];
 			if (yt_params["v"]) {
-				return result + '&videoid=' + yt_params["v"];
+				return result + '&video_id=' + yt_params["v"];
 			} else {
 				return result;
 			}
 		}
-		return 'plugin://plugin.video.youtube/?action=play_video&videoid='
+		return 'plugin://plugin.video.youtube.bromix/play/?video_id='
 			+ yt_params["v"];
 		break;
 	case "ted.com":
