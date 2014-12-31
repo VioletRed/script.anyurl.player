@@ -646,7 +646,7 @@ function encode_video_url(video_url) {
 		/* Better talk to YouTube plugin directly, it allows for more flexible use */
 		var yt_params = parse_yt_params(video_url);
 		if (yt_params["list"]) {
-			result = 'plugin://plugin.video.youtube.bromix/play/?playlist_id='
+			result = 'plugin://plugin.video.youtube/play/?playlist_id='
 				+ yt_params["list"];
 			if (yt_params["v"]) {
 				return result + '&video_id=' + yt_params["v"];
@@ -654,7 +654,7 @@ function encode_video_url(video_url) {
 				return result;
 			}
 		}
-		return 'plugin://plugin.video.youtube.bromix/play/?video_id='
+		return 'plugin://plugin.video.youtube/play/?video_id='
 			+ yt_params["v"];
 		break;
 	case "ted.com":
