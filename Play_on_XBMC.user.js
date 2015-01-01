@@ -631,7 +631,7 @@ function encode_video_url_for_queueing(video_url) {
 		 * queueing a list within another list.
 		 * Thus, we queue only current video. */
 		var yt_params = parse_yt_params(video_url);
-		return 'plugin://plugin.video.youtube.bromix/play/?video_id='
+		return 'plugin://plugin.video.youtube/play/?video_id='
 				+ yt_params["v"];
 		break;
 	}
