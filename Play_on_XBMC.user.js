@@ -649,10 +649,9 @@ function encode_video_url(video_url) {
 			result = 'plugin://plugin.video.youtube/play/?playlist_id='
 				+ yt_params["list"];
 			if (yt_params["v"]) {
-				return result + '&video_id=' + yt_params["v"];
-			} else {
-				return result;
+				result = result + '&video_id=' + yt_params["v"];
 			}
+			return result;
 		}
 		return 'plugin://plugin.video.youtube/play/?video_id='
 			+ yt_params["v"];
