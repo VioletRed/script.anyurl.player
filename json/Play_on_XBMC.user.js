@@ -49,7 +49,6 @@ var xbmc_title = null;
 var xbmc_play_control = null;
 var xbmc_msg_timer = null;
 
-
 /*
  * ============================================================================
  * Site independent code here!!!!
@@ -81,7 +80,7 @@ function json_command_answer(command, logmsgok, logmsgerr) {
 	return -1;
 }
 
-function play_movie_directly(video_url) {
+function play_movie_directly(video_url, video_name) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -138,7 +137,7 @@ function dont_open_video_playlist() {
 	return 0;
 }
 
-function play_in_new_playlist(video_url) {
+function play_in_new_playlist(video_url, video_name) {
 	/* Clear playlist */
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -152,14 +151,14 @@ function play_in_new_playlist(video_url) {
 		onload : function(response) {
 			/* Add movies to Video playlist */
 			xbmc_queued = "";
-			queue_movie_last(video_url, open_video_playlist); 
+			queue_movie_last(video_url, video_name, open_video_playlist); 
 		},
 		onerror: xbmc_json_error,
 		ontimeout: xbmc_json_timeout,
 	});
 }
 
-function queue_movie_at(video_url, xbmc_playlist, xbmc_queue_depth) {
+function queue_movie_at(video_url, video_name, xbmc_playlist, xbmc_queue_depth) {
 	if (xbmc_queued == video_url) {
 		// Show somehow that this action was already completed
 		console.log("Already queued "+xbmc_queued);
@@ -189,7 +188,7 @@ function queue_movie_at(video_url, xbmc_playlist, xbmc_queue_depth) {
 	})
 }
 
-function queue_movie_last(video_url, last_step) {
+function queue_movie_last(video_url, video_name, last_step) {
 	if (xbmc_queued == video_url) {
 		// Show somehow that this action was already completed
 		console.log("Already queued "+xbmc_queued);
@@ -219,7 +218,7 @@ function queue_movie_last(video_url, last_step) {
 	return -1;
 }
 
-function queue_in_party_mode(video_url) {
+function queue_in_party_mode(video_url, video_name) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -241,12 +240,12 @@ function queue_in_party_mode(video_url) {
 			xbmc_queue_depth = xbmc_response.result.limits.end - 9;
 			console.log("XBMC queue size is "
 					+ xbmc_queue_depth);
-			queue_movie_at(video_url, xbmc_music_playlist, xbmc_queue_depth);
+			queue_movie_at(video_url, video_name, xbmc_music_playlist, xbmc_queue_depth);
 		}
 	})
 }
 
-function queue_in_playlist(video_url) {
+function queue_in_playlist(video_url, video_name) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -262,18 +261,19 @@ function queue_in_playlist(video_url) {
 			if (xbmc_response.result.limits == undefined
 					|| xbmc_response.result.limits.end == 0) {
 				console.log("Playlist.GetItems bad response");
-				play_in_new_playlist(video_url)
+				play_in_new_playlist(video_url, video_name)
 				return;
 			}
 			// Queue exist, enqueue media at the end of user
 			// selection
-			queue_movie_last(video_url,dont_open_video_playlist);
+			queue_movie_last(video_url, video_name, dont_open_video_playlist);
 		}
 	})
 }
 
 function play_movie() {
-	video_url = document.documentURI
+	video_url = document.documentURI;
+	video_name = document.title;
 	console.log('Trying to play/queue movie');
 	var xbmc_queue_depth = undefined;
 
@@ -300,7 +300,7 @@ function play_movie() {
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
 				console.log("No active players, play directly");
-				play_movie_directly(video_url)
+				play_movie_directly(video_url, video_name)
 				return; // No active players
 			}
 			GM_xmlhttpRequest({
@@ -317,10 +317,10 @@ function play_movie() {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode != true) {
 						console.log("Not in party mode, play now");
-						play_movie_directly(video_url);
+						play_movie_directly(video_url, video_name);
 						return;
 					}
-					queue_in_party_mode(video_url)
+					queue_in_party_mode(video_url, video_name)
 				}
 			});
 		}
@@ -329,7 +329,8 @@ function play_movie() {
 
 
 function queue_movie() {
-	video_url = document.documentURI
+	video_url = document.documentURI;
+	video_name = document.title;
 	console.log('Trying queue movie/create new playlist');
 	var xbmc_queue_depth = undefined;
 
@@ -351,7 +352,7 @@ function queue_movie() {
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
 				console.log("No active players, create a new queue");
-				play_in_new_playlist(video_url);
+				play_in_new_playlist(video_url, video_name);
 				return;
 			}
 			GM_xmlhttpRequest({
@@ -368,21 +369,21 @@ function queue_movie() {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode == true) {
 						console.log("Party mode, default play");
-						queue_in_party_mode(video_url);
+						queue_in_party_mode(video_url, video_name);
 						return;
 					}
 					if (xbmc_active.result[0].playerid != 1) {
 						console.log("Playing music, create a new queue");
-						play_in_new_playlist(video_url);
+						play_in_new_playlist(video_url, video_name);
 					} else {
 						console.log("Queue in playlist");
-						queue_in_playlist(video_url);
+						queue_in_playlist(video_url, video_name);
 					}
 				},
 				onerror: function(response) {
 					/* No active playlist */
 					console.log("Not playing playlist, queue and play")
-					play_in_new_playlist(video_url);
+					play_in_new_playlist(video_url, video_name);
 				}
 			});
 		}
