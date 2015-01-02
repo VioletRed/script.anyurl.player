@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description         https://github.com/VioletRed/script.video.anyurl
 //
-// @date        2014-12-26
-// @version     15
+// @date        2015-01-02
+// @version     16
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -648,7 +648,7 @@ function encode_video_url(video_url) {
 		/* Better talk to YouTube plugin directly, it allows for more flexible use */
 		var yt_params = parse_yt_params(video_url);
 		if (yt_params["list"]) {
-			result = 'plugin://plugin.video.youtube/play/?playlist_id='
+			result = 'plugin://plugin.video.youtube/play/?play=1&order=default&playlist_id='
 				+ yt_params["list"];
 			if (yt_params["v"]) {
 				result = result + '&video_id=' + yt_params["v"];
