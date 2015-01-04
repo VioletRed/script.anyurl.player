@@ -3,6 +3,7 @@
 	<name>AnyURL</name>
 	<comment></comment>
 	<projects>
+		<project>PlayOnKodi</project>
 		<project>urlresolver</project>
 	</projects>
 	<buildSpec>
@@ -17,12 +18,21 @@
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1413656539746</id>
+			<id>1420389892642</id>
 			<name></name>
 			<type>26</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-.git</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1420389892647</id>
+			<name></name>
+			<type>6</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-.*</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>

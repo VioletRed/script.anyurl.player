@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.anyurl.player
 //
 // @date        2015-01-04
-// @version     18.1
+// @version     18.2
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -115,20 +115,22 @@ function play_movie_directly(video_url, video_name) {
 
 function open_video_playlist() {
 	console.log('New video queue');
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			"Content-type" : "application/json"
-		},
-		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
-				+ '"params":{"item": { "playlistid" : ' + xbmc_video_playlist 
-				+ ' }}, "id" : 1}',
-		onload : function(response) {
-			console.log('Playing video');
-			show_ui_msg("PLAYING", 2000);
-		}
-	});
+	setTimeout(function() {
+		GM_xmlhttpRequest({
+			method : 'POST',
+			url : 'http://' + xbmc_address + '/jsonrpc',
+			headers : {
+				"Content-type" : "application/json"
+			},
+			data : '{"jsonrpc": "2.0", "method": "Player.Open", '
+					+ '"params":{"item": { "playlistid" : '
+					+ xbmc_video_playlist + ' }}, "id" : 1}',
+			onload : function(response) {
+				console.log('Playing video');
+				show_ui_msg("PLAYING", 2000);
+			}
+		});
+	}, 5000);
 }
 
 function dont_open_video_playlist() {
@@ -151,7 +153,7 @@ function play_in_new_playlist(video_url, video_name) {
 		onload : function(response) {
 			/* Add movies to Video playlist */
 			xbmc_queued = "";
-			queue_movie_last(video_url, video_name, open_video_playlist); 
+			queue_movie_last(video_url, video_name, open_video_playlist);
 		},
 		onerror: xbmc_json_error,
 		ontimeout: xbmc_json_timeout,
@@ -170,14 +172,15 @@ function queue_movie_at(video_url, video_name, xbmc_playlist, xbmc_queue_depth) 
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "method": "Playlist.Insert", '
-				+ '"params":{"item": { "file" : "'
-				+ encode_video_url_for_queueing(video_url)
-				+ '" }, "playlistid" :'
-				+ xbmc_playlist
-				+ ', "position" : '
-				+ xbmc_queue_depth
-				+ ' }, "id" : 1}',
+		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
+			+ '"params": {  "addonid":"script.anyurl.player",'
+			    + '"params" : {'
+			        + '"mode" : "queue_video", '
+			        + '"title" : "' + video_name
+			        + '", "url" : "' + encode_video_url_for_queueing(video_url)
+			        + '", "playlistid" : "' + xbmc_playlist
+				    + '", "position" : "' + xbmc_queue_depth + '"'
+			+ ' } } }',
 		onerror: xbmc_json_error,
 		ontimeout: xbmc_json_timeout,
 		onload : function(response) {
@@ -193,23 +196,29 @@ function queue_movie_last(video_url, video_name, last_step) {
 		// Show somehow that this action was already completed
 		console.log("Already queued "+xbmc_queued);
 		return;
-	} 
+	}
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "method": "Playlist.Add", '
-				+ '"params":{"item": { "file" : "'
-				+ encode_video_url_for_queueing(video_url) + '" }, "playlistid" :'
-				+ xbmc_video_playlist + ' }, "id" : 1}',
+		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
+			+ '"params": {  "addonid":"script.anyurl.player",'
+			    + '"params" : {'
+			        + '"mode" : "queue_video", '
+			        + '"title" : "' + video_name
+			        + '", "url" : "' + encode_video_url_for_queueing(video_url)
+			        + '", "playlistid" : "' + xbmc_video_playlist + '"'
+			+ ' } } }',
 		onload : function(response) {
 			var result = JSON.parse(response.responseText);
 			if (result.result == "OK") {
 					xbmc_queued = video_url;
 					last_step();
 					return 0;
+			} else {
+				console.log("OOOOOOOPSSSS")
 			}
 		},
 		onerror: xbmc_json_error,
@@ -392,7 +401,7 @@ function queue_movie() {
 
 /*
  * ============================================================================
- * Movie control functions 
+ * Movie control functions
  * ============================================================================
  */
 function pause_movie() {
@@ -432,7 +441,7 @@ function next_movie() {
 
 /*
  * ============================================================================
- * UI functions 
+ * UI functions
  * ============================================================================
  */
 function modify_xbmc_address() {
@@ -523,7 +532,7 @@ function add_play_on_xbmc_buttons() {
 	xbmc_other_control.appendChild(xbmc_playback_control);
 	xbmc_ui.appendChild(xbmc_play_control);
 	xbmc_ui.appendChild(xbmc_other_control);
-	
+
 	document.body.parentNode.insertBefore(xbmc_ui, document.body);
 
 	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#103040; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
@@ -629,16 +638,21 @@ function encode_video_url_for_queueing(video_url) {
 	switch (current_host) {
 	case "youtube.com":
 	case "youtu.be":
-		/* Youtube has it's own playlists, but Kodi doesn't support 
+		/* Youtube has it's own playlists, but Kodi doesn't support
 		 * queueing a list within another list.
 		 * Thus, we queue only current video. */
 		var yt_params = parse_yt_params(video_url);
 		return 'plugin://plugin.video.youtube/play/?video_id='
 				+ yt_params["v"];
 		break;
+	case "ted.com":
+		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
+		+ encodeURIComponent(video_url)
+		+'&icon=a';
+	break;
 	}
-	/* All other domains use the same URI for queueing and playing */
-	return encode_video_url(video_url);
+	/* All other domains just use current URL */
+	return encodeURIComponent(video_url);
 }
 
 function encode_video_url(video_url) {
