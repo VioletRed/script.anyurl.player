@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.anyurl.player
 //
 // @date        2015-01-04
-// @version     18
+// @version     18.1
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -15,7 +15,7 @@
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
 // @grant       GM_log
-// @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/Play_on_XBMC.user.js
+// @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
 // ==/UserScript==
 //
 // Simple script to send media to Kodi.
