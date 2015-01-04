@@ -1,13 +1,13 @@
 // ==UserScript==
-// @name        Play on XBMC
+// @name        Play on Kodi/XBMC
 // @namespace   user@violet.local
 //
-// @description Resolve and play media on XBMC
+// @description Resolve and play media on Kodi/XBMC
 // @description Use with AnyURL plugin from:
-// @description         https://github.com/VioletRed/script.video.anyurl
+// @description         https://github.com/VioletRed/script.anyurl.player
 //
-// @date        2015-01-02
-// @version     16
+// @date        2015-01-04
+// @version     17
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -15,17 +15,20 @@
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
 // @grant       GM_log
-// @updateURL   https://gist.github.com/VioletRed/9577d8c062f3ff056c59/raw/Play_on_XBMC.user.js
-
+// @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/Play_on_XBMC.user.js
 // ==/UserScript==
-// Simple script to send media to XBMC.
+//
+// Simple script to send media to Kodi.
+// Adds a "Send to Kodi" button on supported websites
 // Supported plugins:
 // 	* Youtube
 //	* TED
-// 	* AnyURL plugin for other domains (https://github.com/VioletRed/script.video.anyurl).
-
-// ==/UserScript==
-// Add a "Send to XBMC" on a webpage
+// 	* AnyURL plugin for other domains (https://github.com/VioletRed/script.anyurl.player).
+//
+// !!!!!!!!! 
+//    THIS IS THE LAST UPDATE IN GIST.
+//    CHECK https://github.com/VioletRed/script.anyurl.player FOR FUTURE UPDATES
+//
 // It uses the old GM_*** API, and needs cleaning.
 
 /* ============================================================================
@@ -165,7 +168,7 @@ function queue_movie_at(video_url, xbmc_playlist, xbmc_queue_depth) {
 		// Show somehow that this action was already completed
 		console.log("Already queued "+xbmc_queued);
 		return;
-	} 
+	}
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
