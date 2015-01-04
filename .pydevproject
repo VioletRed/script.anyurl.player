@@ -6,6 +6,6 @@
 <path>/${PROJECT_DIR_NAME}</path>
 </pydev_pathproperty>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
-<path>/opt/src/plugins/xbmcstubs</path>
+<path>/opt/src/addons-kodi/xbmcstubs</path>
 </pydev_pathproperty>
 </pydev_project>
