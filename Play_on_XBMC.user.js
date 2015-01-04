@@ -7,7 +7,7 @@
 // @description         https://github.com/VioletRed/script.anyurl.player
 //
 // @date        2015-01-04
-// @version     17
+// @version     18
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -24,10 +24,6 @@
 // 	* Youtube
 //	* TED
 // 	* AnyURL plugin for other domains (https://github.com/VioletRed/script.anyurl.player).
-//
-// !!!!!!!!! 
-//    THIS IS THE LAST UPDATE IN GIST.
-//    CHECK https://github.com/VioletRed/script.anyurl.player FOR FUTURE UPDATES
 //
 // It uses the old GM_*** API, and needs cleaning.
 
@@ -667,7 +663,7 @@ function encode_video_url(video_url) {
 			+'&icon=a';
 		break;
 	}
-	return 'plugin://script.video.anyurl/?mode=play_video&url='
+	return 'plugin://script.anyurl.player/?mode=play_video&url='
 			+ encodeURIComponent(video_url);
 }
 
