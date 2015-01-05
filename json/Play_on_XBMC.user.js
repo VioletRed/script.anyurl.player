@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-01-05
-// @version     19
+// @version     19.1
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -738,8 +738,8 @@ function queue_in_playlist(context) {
 function play_movie() {
 	var context = {};
 	context['url'] = document.documentURI;
-	context['title'] = document.title;
-	console.log('Trying to play/queue movie');
+	context['title'] = encodeURIComponent(document.title);
+	console.log('Trying to play/queue movie '+context['title']);
 	var xbmc_queue_depth = undefined;
 
 	show_ui_msg("LOADING", 30000);
@@ -795,10 +795,10 @@ function play_movie() {
 function queue_movie() {
 	var context = {};
 	context['url'] = document.documentURI;
-	context['title'] = document.title;
+	context['title'] = encodeURIComponent(document.title);
 	context['encoded'] = encode_url_for_queueing(context['url']);
 	context['is_playlist'] = url_is_playlist(context['url']);
-	console.log('Trying queue movie/create new playlist');
+	console.log('Trying queue movie/create new playlist '+context['title']);
 	var xbmc_queue_depth = undefined;
 
 	show_ui_msg("LOADING", 30000);

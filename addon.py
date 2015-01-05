@@ -59,7 +59,7 @@ except:
     addon_handle = None
     mode = getArg(sys.argv, 'mode', '')
     url = urllib2.unquote(getArg(sys.argv, 'url', ''))
-    label = getArg(sys.argv, 'title', '')
+    label = urllib2.unquote(getArg(sys.argv, 'title', ''))
     index = int(getArg(sys.argv, 'index', '-1'))
     playlist = int(getArg(sys.argv, 'playlistid', '1'))
 
