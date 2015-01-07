@@ -14,7 +14,6 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
-// @grant       GM_log
 // @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
 // ==/UserScript==
 //
@@ -735,63 +734,7 @@ function queue_in_playlist(context) {
 	})
 }
 
-function play_movie() {
-	var context = {};
-	context['url'] = document.documentURI;
-	context['title'] = encodeURIComponent(document.title);
-	console.log('Trying to play/queue movie '+context['title']);
-	var xbmc_queue_depth = undefined;
-
-	show_ui_msg("LOADING", 30000);
-	/*
-	 * Logic goes like this: First, try to queue the video. If it fails, play
-	 * video directly. Because AJAX is asynchronous, we use a timer for "direct
-	 * play", and cancel it if we succeed to queue the video where we want
-	 */
-	if (context['url'] == undefined || xbmc_queued == context['url']) {
-		return;
-	}
-	// Get the current playlist
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			"Content-type" : "application/json"
-		},
-		data : '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers",'
-				+ '"params":{}, "id" : 1}',
-		onload : function(response) {
-			var xbmc_active = JSON.parse(response.responseText);
-			if (xbmc_active.result == undefined
-					|| xbmc_active.result.length == 0) {
-				console.log("No active players, play directly");
-				play_movie_directly(context)
-				return; // No active players
-			}
-			GM_xmlhttpRequest({
-				method : 'POST',
-				url : 'http://' + xbmc_address + '/jsonrpc',
-				headers : {
-					"Content-type" : "application/json"
-				},
-				data : '{"jsonrpc": "2.0", "method": "Player.GetProperties",'
-						+ '"params":{"playerid" : '
-						+ xbmc_active.result[0].playerid
-						+ ', "properties" :  [ "playlistid" , "partymode" ] }, "id" : 1}',
-				onload : function(response) {
-					var xbmc_properties = JSON.parse(response.responseText);
-					if (xbmc_properties.result.partymode != true) {
-						console.log("Not in party mode, play now");
-						play_movie_directly(context);
-						return;
-					}
-					queue_in_party_mode(context)
-				}
-			});
-		}
-	});
-}
-
+/* Send link to Kodi */
 function queue_movie() {
 	var context = {};
 	context['url'] = document.documentURI;
@@ -947,6 +890,9 @@ function add_play_on_xbmc_buttons() {
 		xbmc_buttons['stop_h'] = Stop_30H_png;
 		xbmc_buttons['more'] = More_30_png;
 		xbmc_buttons['more_h'] = More_30H_png;
+		xbmc_buttons['bwidth'] = '60px';
+		xbmc_buttons['swidth'] = '30px';
+		xbmc_buttons['fwidth'] = '130px';
 	} else {
 		xbmc_buttons['share'] = Share_40_png;
 		xbmc_buttons['share_h'] = Share_40H_png;
@@ -958,6 +904,9 @@ function add_play_on_xbmc_buttons() {
 		xbmc_buttons['stop_h'] = Stop_20H_png;
 		xbmc_buttons['more'] = More_20_png
 		xbmc_buttons['more_h'] = More_20H_png;
+		xbmc_buttons['bwidth'] = '40px';
+		xbmc_buttons['swidth'] = '20px';
+		xbmc_buttons['fwidth'] = '90px';
 	}
 
 	xbmc_play_control = document.createElement('div');
@@ -1011,31 +960,67 @@ function add_play_on_xbmc_buttons() {
 
 	document.body.parentNode.insertBefore(xbmc_ui, document.body);
 
-	GM_addStyle('#xbmc { opacity:0.4; width:90px; position:fixed; z-index:100; bottom:0; right:0; display:block; background:#103040; -moz-border-radius-topleft: 20px; -moz-border-radius-bottomleft:20px; -webkit-border-top-left-radius:20px;  -webkit-border-bottom-left-radius:20px; } ')
+	GM_addStyle('#xbmc { opacity:0.4; width:' + xbmc_buttons['fwidth']
+			+ '; position:fixed; z-index:100; bottom:0; right:0;'
+			+ ' display:block; background:#103040;'
+			+ ' -moz-border-radius-topleft: ' + xbmc_buttons['swidth']
+			+ '; -moz-border-radius-bottomleft:' + xbmc_buttons['swidth']
+			+ '; -webkit-border-top-left-radius:' + xbmc_buttons['swidth']
+			+ ';  -webkit-border-bottom-left-radius:' + xbmc_buttons['swidth']
+			+ '; } ')
 	GM_addStyle('#xbmc:hover { opacity: 0.7; } ')
 
-	GM_addStyle('#xbmcText { opacity:0.8; font-family:Terminal; text-align:center; font-size:12px; font-weight:bold; background:#401010; color:#a0a0a0 } ')
+	GM_addStyle('#xbmcText { opacity:0.8; font-family:Terminal; '
+			+ 'text-align:center; font-size:12px; font-weight:bold; '
+			+ 'background:#401010; color:#a0a0a0 } ')
 
-	// Play control
-	GM_addStyle('#playControl span, #playbackPlay span:hover { width:40px; height:40px; float:left; display:block; padding-bottom:0px; -moz-background-size:40px; background-size:40px; -webkit-background-size:40px; -o-background-size:40px; -khtml-background-size:40px; cursor:pointer; } ')
+	// 'Share' control
+	GM_addStyle('#playControl span, #playbackPlay span:hover { width:'
+			+ xbmc_buttons['bwidth']
+			+ '; height:'
+			+ xbmc_buttons['bwidth']
+			+ '; float:left; display:block; padding-bottom:0px; -moz-background-size:'
+			+ xbmc_buttons['bwidth'] + '; background-size:'
+			+ xbmc_buttons['bwidth'] + '; -webkit-background-size:'
+			+ xbmc_buttons['bwidth'] + '; -o-background-size:'
+			+ xbmc_buttons['bwidth'] + '; -khtml-background-size:'
+			+ xbmc_buttons['bwidth'] + '; cursor:pointer; } ')
 
-	GM_addStyle('#btPlay { background: url("data:image/png;base64,'+xbmc_buttons['share']+'") no-repeat; } ')
-	GM_addStyle('#btPlay:hover { background: url("data:image/png;base64,'+xbmc_buttons['share_h']+'") no-repeat; } ')
+	GM_addStyle('#btPlay { background: url("data:image/png;base64,'
+			+ xbmc_buttons['share'] + '") no-repeat; } ')
+	GM_addStyle('#btPlay:hover { background: url("data:image/png;base64,'
+			+ xbmc_buttons['share_h'] + '") no-repeat; } ')
 
 	// Other control
-	GM_addStyle('#playbackControl span, #playbackControl span:hover { width:20px; height:20px; bottom:0; float:left; display:block; margin-left:3px; -moz-background-size:20px; background-size:20px; -webkit-background-size:20px; -o-background-size:20px; -khtml-background-size:20px; cursor:pointer; } ')
+	GM_addStyle('#playbackControl span, #playbackControl span:hover { width:'
+			+ xbmc_buttons['swidth'] + '; height:' + xbmc_buttons['swidth']
+			+ '; bottom:0; float:left; display:block; margin-left:3px; '
+			+ '-moz-background-size:' + xbmc_buttons['swidth']
+			+ '; background-size:' + xbmc_buttons['swidth']
+			+ '; -webkit-background-size:' + xbmc_buttons['swidth']
+			+ '; -o-background-size:' + xbmc_buttons['swidth']
+			+ '; -khtml-background-size:' + xbmc_buttons['swidth']
+			+ '; cursor:pointer; } ')
 
-	GM_addStyle('#btNext { background: url("data:image/png;base64,'+xbmc_buttons['next']+'") no-repeat; } ')
-	GM_addStyle('#btNext:hover { background: url("data:image/png;base64,'+xbmc_buttons['next_h']+'") no-repeat; } ')
+	GM_addStyle('#btNext { background: url("data:image/png;base64,'
+			+ xbmc_buttons['next'] + '") no-repeat; } ')
+	GM_addStyle('#btNext:hover { background: url("data:image/png;base64,'
+			+ xbmc_buttons['next_h'] + '") no-repeat; } ')
 
-	GM_addStyle('#btMore { background: url("data:image/png;base64,'+xbmc_buttons['more']+'") no-repeat; } ')
-	GM_addStyle('#btMore:hover { background: url("data:image/png;base64,'+xbmc_buttons['more_h']+'") no-repeat; } ')
+	GM_addStyle('#btMore { background: url("data:image/png;base64,'
+			+ xbmc_buttons['more'] + '") no-repeat; } ')
+	GM_addStyle('#btMore:hover { background: url("data:image/png;base64,'
+			+ xbmc_buttons['more_h'] + '") no-repeat; } ')
 
-	GM_addStyle('#btPause { background: url("data:image/png;base64,'+xbmc_buttons['playpause']+'") no-repeat; } ')
-	GM_addStyle('#btPause:hover { background: url("data:image/png;base64,'+xbmc_buttons['playpause_h']+'") no-repeat; } ')
+	GM_addStyle('#btPause { background: url("data:image/png;base64,'
+			+ xbmc_buttons['playpause'] + '") no-repeat; } ')
+	GM_addStyle('#btPause:hover { background: url("data:image/png;base64,'
+			+ xbmc_buttons['playpause_h'] + '") no-repeat; } ')
 
-	GM_addStyle('#btStop { background: url("data:image/png;base64,'+xbmc_buttons['stop']+'") no-repeat; } ')
-	GM_addStyle('#btStop:hover { background: url("data:image/png;base64,'+xbmc_buttons['stop_h']+'") no-repeat; } ')
+	GM_addStyle('#btStop { background: url("data:image/png;base64,'
+			+ xbmc_buttons['stop'] + '") no-repeat; } ')
+	GM_addStyle('#btStop:hover { background: url("data:image/png;base64,'
+			+ xbmc_buttons['stop_h'] + '") no-repeat; } ')
 }
 
 /*
