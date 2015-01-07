@@ -9,8 +9,8 @@
 // @date        2015-01-09
 // @version     20
 // @include     *
+// @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @grant       GM_addStyle
-// @grant       GM_registerMenuCommand
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
@@ -29,8 +29,29 @@
 /* ============================================================================
  * Global config
  * */
+GM_config.init({
+	'id' : 'GM_config', // The id used for this instance of GM_config
+	'title' : 'Kodi setup',
+	'fields' : // Fields object
+	{
+		'XBMC_ADDRESS' : // This is the id of the field
+		{
+			'label' : 'Host', // Appears next to field
+			'type' : 'text', // Makes this setting a text field
+			'default' : '<host>:<port>' // Default value if user doesn't
+		// change it
+		},
+		'USE_BIG' : {
+			'label' : 'Use big buttons', // Appears next to field
+			'type' : 'checkbox', // Makes this setting a checkbox input
+			'default' : false
+		// Default value if user doesn't change it
+		}
+	},
+	'css':'background:#103040;'
+});
 
-var xbmc_address = GM_getValue('XBMC_ADDRESS');
+var xbmc_address = GM_config.get('XBMC_ADDRESS');
 var xbmc_queued = null;
 const xbmc_music_playlist = 0; // Queue for party mode
 const xbmc_video_playlist = 1; // Queue for video mode
@@ -731,6 +752,11 @@ function queue_in_playlist(context) {
 	})
 }
 
+/* */
+function config_script() {
+	GM_config.open();
+}
+
 /* Send link to Kodi */
 function queue_movie() {
 	var context = {};
@@ -848,13 +874,6 @@ function next_movie() {
  * UI functions
  * ============================================================================
  */
-function modify_xbmc_address() {
-	xbmc_address = window.prompt(
-					'Enter the address for the XBMC web interface\n(username:password@address:port)',
-					xbmc_address);
-	GM_setValue("XBMC_ADDRESS", xbmc_address);
-}
-
 function remove_playing_msg() {
 	try {
 		xbmc_ui.removeChild(xbmc_title);
@@ -880,7 +899,7 @@ function add_play_on_xbmc_buttons() {
 	xbmc_ui = document.createElement('div');
 	xbmc_ui.setAttribute('id', 'xbmc');
 
-	xbmc_ui_use_big = GM_getValue('USE_BIG', false);
+	xbmc_ui_use_big = GM_config.get('USE_BIG');
 	xbmc_buttons = {};
 	if (xbmc_ui_use_big) {
 		xbmc_buttons['share'] = Share_60_png;
@@ -947,9 +966,9 @@ function add_play_on_xbmc_buttons() {
 	xbmc_next.setAttribute('title', 'Play next video');
 
 	var xbmc_more = document.createElement('span');
-	xbmc_more.addEventListener('click', queue_movie, false);
+	xbmc_more.addEventListener('click', config_script, false);
 	xbmc_more.setAttribute('id', 'btMore');
-	xbmc_more.setAttribute('title', 'More options (Nothing here yet)');
+	xbmc_more.setAttribute('title', 'More options (Config)');
 
 	xbmc_play_control.appendChild(xbmc_play);
 	xbmc_playback_control.appendChild(xbmc_next);
@@ -1115,6 +1134,9 @@ function url_is_playlist(video_url) {
 	return !is_playlist;
 }
 
+/*
+ * URI to send to AnyURL script in Kodi.
+ */
 function encode_url_for_queueing(video_url) {
 	switch (current_host) {
 	case "youtube.com":
@@ -1135,6 +1157,9 @@ function encode_url_for_queueing(video_url) {
 	return encodeURIComponent(video_url);
 }
 
+/*
+ * URI to send to a new playist.
+ */
 function encode_url_for_new_playlist(video_url) {
 	switch (current_host) {
 	case "youtube.com":
@@ -1165,10 +1190,9 @@ function encode_url_for_new_playlist(video_url) {
 
 /* Add buttons only if necessary */
 if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
-	GM_registerMenuCommand('Modify the XBMC address', modify_xbmc_address);
 	// First run?
-	if (xbmc_address === undefined)
-		modify_xbmc_address();
+	if (xbmc_address == '<host>:<port>')
+		config_script();
 
 	add_play_on_xbmc_buttons()
 } else {
