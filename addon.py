@@ -51,7 +51,7 @@ try:
     mode = args.get('mode',[None])[0]
     url = args.get('url',[''])[0]
     label = args.get('title',[''])[0]
-    index = int(args.get('position',['0'])[0])
+    position = int(args.get('position',['0'])[0])
     playlist = int(args.get('playlistid',['1'])[0])
 except:
     # Parse arguments as a non-handled plugin (e.g. script)
@@ -60,7 +60,7 @@ except:
     mode = getArg(sys.argv, 'mode', '')
     url = urllib2.unquote(getArg(sys.argv, 'url', ''))
     label = urllib2.unquote(getArg(sys.argv, 'title', ''))
-    index = int(getArg(sys.argv, 'index', '-1'))
+    position = int(getArg(sys.argv, 'position', '-1'))
     playlist = int(getArg(sys.argv, 'playlistid', '1'))
 
 if mode == 'play_video':
@@ -78,17 +78,18 @@ if mode == 'play_video':
         xbmc.log("%s: Unhandled exception  %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
 elif mode == 'queue_video':
     if (re.match('plugin:', url)):
-        li = xbmcgui.ListItem(label = label, path = url)
-        xbmc.PlayList(1).add(url, li, index)
+        li = xbmcgui.ListItem(label = label, path=url)
+        xbmc.PlayList(playlist).add(url, li, position)
         xbmc.log("%s: Queue plugin URI %s %s" % (addon_id, label, url), xbmc.LOGNOTICE)
     else:
         try:
             li, file_url = resolveURL(url, label)
-            xbmc.PlayList(1).add(file_url, li, index)
+            xbmc.PlayList(playlist).add(file_url, li, position)
             xbmc.log("%s: Queue resolved URI %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
         except:
             xbmc.log("%s: Unhandled exception %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
-elif mode == 'queue_insert':
+elif mode == 'test':
+    print "Do nothing, yet"
     pass
 else:
     xbmc.log("%s: Nothing to play" % (addon_id), xbmc.LOGNOTICE)
