@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-01-05
-// @version     19.1
+// @date        2015-01-09
+// @version     20
 // @include     *
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -588,17 +588,13 @@ function open_video_playlist() {
 				show_ui_msg("PLAYING", 2000);
 			}
 		});
-	}, 5000);
-}
-
-function dont_open_video_playlist() {
-	console.log('Queued video at the end ');
-	show_ui_msg("QUEUED", 5000);
-	return 0;
+	}, 4000);
 }
 
 function play_in_new_playlist(context) {
 	/* Clear playlist */
+	GM_setValue('QUEUE_POSITION', 0);
+	context['position'] = 0;
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -616,7 +612,7 @@ function play_in_new_playlist(context) {
 			if (context['is_playlist']) {
 				play_movie_directly(context);
 			} else {
-				queue_movie_last(context, open_video_playlist);
+				queue_movie_and_play(context);
 			}
 		},
 		onerror : xbmc_json_error,
@@ -624,7 +620,7 @@ function play_in_new_playlist(context) {
 	});
 }
 
-function queue_movie_at(context, xbmc_playlist, xbmc_queue_depth) {
+function queue_movie_at(context) {
 	if (xbmc_queued == context['url']) {
 		// Show somehow that this action was already completed
 		console.log("Already queued " + xbmc_queued);
@@ -640,8 +636,8 @@ function queue_movie_at(context, xbmc_playlist, xbmc_queue_depth) {
 				+ '"params": {  "addonid":"script.anyurl.player",'
 				+ '"params" : {' + '"mode" : "queue_video", ' + '"title" : "'
 				+ context['title'] + '", "url" : "' + context['encoded']
-				+ '", "playlistid" : "' + xbmc_playlist + '", "position" : "'
-				+ xbmc_queue_depth + '"' + ' } } }',
+				+ '", "playlistid" : "' + context['playlistid'] + '", "position" : "'
+				+ context['position'] + '"' + ' } } }',
 		onerror : xbmc_json_error,
 		ontimeout : xbmc_json_timeout,
 		onload : function(response) {
@@ -652,7 +648,7 @@ function queue_movie_at(context, xbmc_playlist, xbmc_queue_depth) {
 	})
 }
 
-function queue_movie_last(context, last_step) {
+function queue_movie_and_play(context) {
 	if (xbmc_queued == context['url']) {
 		// Show somehow that this action was already completed
 		console.log("Already queued " + xbmc_queued);
@@ -668,12 +664,12 @@ function queue_movie_last(context, last_step) {
 				+ '"params": {  "addonid":"script.anyurl.player",'
 				+ '"params" : {' + '"mode" : "queue_video", ' + '"title" : "'
 				+ context['title'] + '", "url" : "' + context['encoded']
-				+ '", "playlistid" : "' + xbmc_video_playlist + '"' + ' } } }',
+				+ '", "playlistid" : "' + context['playlistid'] + '"' + ' } } }',
 		onload : function(response) {
 			var result = JSON.parse(response.responseText);
 			if (result.result == "OK") {
 				xbmc_queued = context['url'];
-				last_step();
+				open_video_playlist();
 				return 0;
 			} else {
 			}
@@ -692,7 +688,7 @@ function queue_in_party_mode(context) {
 			"Content-type" : "application/json"
 		},
 		data : '{"jsonrpc": "2.0", "method": "Playlist.GetItems",'
-				+ '"params":{"playlistid" : ' + xbmc_music_playlist
+				+ '"params":{"playlistid" : ' + context['playlistid']
 				+ '}, "id" : 1}',
 		onload : function(response) {
 			var xbmc_response = JSON.parse(response.responseText);
@@ -702,9 +698,9 @@ function queue_in_party_mode(context) {
 			}
 			// Queue exist, enqueue media at the end of user
 			// selection
-			xbmc_queue_depth = xbmc_response.result.limits.end - 9;
+			context['position'] = xbmc_response.result.limits.end - 9;
 			console.log("XBMC queue size is " + xbmc_queue_depth);
-			queue_movie_at(context, xbmc_music_playlist, xbmc_queue_depth);
+			queue_movie_at(context);
 		}
 	})
 }
@@ -729,7 +725,8 @@ function queue_in_playlist(context) {
 			}
 			// Queue exist, enqueue media at the end of user
 			// selection
-			queue_movie_last(context, dont_open_video_playlist);
+			queue_movie_at(context);
+			GM_setValue('QUEUE_POSITION', context['position']+1);
 		}
 	})
 }
@@ -741,7 +738,9 @@ function queue_movie() {
 	context['title'] = encodeURIComponent(document.title);
 	context['encoded'] = encode_url_for_queueing(context['url']);
 	context['is_playlist'] = url_is_playlist(context['url']);
-	console.log('Trying queue movie/create new playlist '+context['title']);
+	context['playlistid'] = xbmc_video_playlist;
+	context['position'] = GM_getValue('QUEUE_POSITION', 0);
+	console.log('Trying queue movie/create new playlist ' + context['title']);
 	var xbmc_queue_depth = undefined;
 
 	show_ui_msg("LOADING", 30000);
@@ -774,10 +773,11 @@ function queue_movie() {
 				data : '{"jsonrpc": "2.0", "method": "Player.GetProperties",'
 						+ '"params":{"playerid" : '
 						+ xbmc_active.result[0].playerid
-						+ ', "properties" :  [ "playlistid" , "partymode" ] }, "id" : 1}',
+						+ ', "properties" :  [ "playlistid" , "partymode", "position" ] }, "id" : 1}',
 				onload : function(response) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					if (xbmc_properties.result.partymode == true) {
+						context['playlistid'] = xbmc_properties.result.playlistid;
 						console.log("Party mode, default play");
 						queue_in_party_mode(context);
 						return;
@@ -786,7 +786,10 @@ function queue_movie() {
 						console.log("Playing music, create a new queue");
 						play_in_new_playlist(context);
 					} else {
-						console.log("Queue in playlist");
+						if (context['position'] <= xbmc_properties.result.position) {
+							context['position'] = xbmc_properties.result.position + 1;
+						}
+						console.log("Queue in playlist at " + context['position']);
 						queue_in_playlist(context);
 					}
 				},
