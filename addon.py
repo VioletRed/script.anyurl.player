@@ -16,16 +16,11 @@ def resolveURL(url,label):
         print "Resolving %s" % url
         file_url = media_source.resolve()
         if file_url:
-            media_labels = media_source.get_media_labels()
-            if not media_labels.get('title',''):
-                media_labels['title'] = label
-            li = xbmcgui.ListItem(label = media_labels['title'], path = file_url)
+            li = xbmcgui.ListItem(label = label, path = file_url)
             li.setProperty('IsPlayable', 'true')
-            # li.setThumbnailImage(media_labels['icon'])
             return (li, file_url)
         else:
             xbmc.log("%s: Non playable URL" % (addon_id), xbmc.LOGNOTICE)
-            # xbmcplugin.setResolvedUrl(addon_handle, succeeded=False, listitem=li)
     except KeyError:
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
     except:
