@@ -1,23 +1,57 @@
-import re, string, sys, os
+import re, sys
 import urlparse
 
-import urlresolver
 import urllib2
-import os
 from urlresolver.types import HostedMediaFile
 import xbmc
 import xbmcgui
 import xbmcaddon
 import xbmcplugin
 
+''' Extend Kodi player '''
+class MyPlayer(xbmc.Player):
+    def __init__( self):
+        xbmc.Player.__init__(self)
+        self._processed = False
+
+    def onPlayBackStarted(self):
+        # Hack here: dig into the playlists, 
+        #   and resolve Youtube videos in advance
+        print "Playing started!!!!!!!"
+        self._processed = True
+
+    def isProcessed(self):
+        return self._processed
+
+''' Read from incoming arguments '''
+def getArg(args, label, default=None):
+    for arg in args:
+        match = re.match(label+"=", arg)
+        if match:
+            return arg[match.end():]
+    return default
+
+''' Create video labels '''
+def createLabels(li):
+    infoLabels={"Studio":"","ShowTitle":"","Title":li.getLabel()}
+    return infoLabels
+
+''' Try to resolve URL '''
 def resolveURL(url,label):
     try:
         media_source = HostedMediaFile(url)
         print "Resolving %s" % url
         file_url = media_source.resolve()
+        li = None
+        if hasattr(media_source, "get_list_item"): li = media_source.get_list_item()
+        if li:
+            li.setProperty('IsPlayable', 'true')
+            li.setInfo(type="Video", infoLabels=createLabels(li))
+            return (li, file_url)
         if file_url:
             li = xbmcgui.ListItem(label = label, path = file_url)
             li.setProperty('IsPlayable', 'true')
+            li.setInfo(type="Video", infoLabels=createLabels(li))
             return (li, file_url)
         else:
             xbmc.log("%s: Non playable URL" % (addon_id), xbmc.LOGNOTICE)
@@ -27,12 +61,47 @@ def resolveURL(url,label):
         xbmc.log("%s: Unhandled exception %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
     return (None, '')
 
-def getArg(args, label, default=None):
-    for arg in args:
-        match = re.match(label+"=", arg)
-        if match:
-            return arg[match.end():]
-    return default
+''' Play a single video without touching the current playlist '''
+def playVideo(url, label, playlist):
+    try:
+        if (re.match('plugin:', url)):
+            # No need to resolve anything
+            li = xbmcgui.ListItem(label = label, path=url)
+            file_url = url
+        else:
+            # Try to resolve
+            li,file_url = resolveURL(url, label)
+
+        if (re.match('plugin:', file_url)):
+            player = MyPlayer()
+            xbmc.log("%s: Play video: %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
+            player.play(item = file_url, listitem = li)
+            waiting = 0
+            while(not player.isProcessed() and waiting < 1000):
+                xbmc.sleep(1000)
+                waiting += 1
+        elif file_url:
+            xbmc.log("%s: Resolved URL: %s" % (addon_id, li.getLabel()), xbmc.LOGNOTICE)
+            xbmcplugin.setResolvedUrl(addon_handle, succeeded=True, listitem=li)
+        else:
+            pass
+    except:
+        xbmc.log("%s: Unhandled exception  %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
+
+''' Queue a new URL into the playlist '''
+def queueVideo(url, label, playlist, position):
+    if (re.match('plugin:', url)):
+        li = xbmcgui.ListItem(label = label, path=url)
+        xbmc.PlayList(playlist).add(url, li, position)
+        xbmc.log("%s: Queue plugin URI: %s %s" % (addon_id, label, url), xbmc.LOGNOTICE)
+    else:
+        try:
+            li, file_url = resolveURL(url, label)
+            if file_url:
+                xbmc.PlayList(playlist).add(file_url, li, position)
+                xbmc.log("%s: Queue resolved URI: %s" % (addon_id, li.getLabel()), xbmc.LOGNOTICE)
+        except:
+            xbmc.log("%s: Unhandled exception %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
 
 addon_id = 'script.anyurl.player'
 addon = xbmcaddon.Addon(id=addon_id)
@@ -59,30 +128,9 @@ except:
     playlist = int(getArg(sys.argv, 'playlistid', '1'))
 
 if mode == 'play_video':
-    try:
-        li,file_url = resolveURL(url, label)
-        if (re.match('plugin:', file_url)):
-            xbmc.log("%s: Play video %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
-            xbmc.Player().play(item = li.path, listitem = li)
-        elif file_url:
-            xbmc.log("%s: Resolved URL %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
-            xbmcplugin.setResolvedUrl(addon_handle, succeeded=True, listitem=li)
-        else:
-            pass
-    except:
-        xbmc.log("%s: Unhandled exception  %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
+    playVideo(url, label, playlist)
 elif mode == 'queue_video':
-    if (re.match('plugin:', url)):
-        li = xbmcgui.ListItem(label = label, path=url)
-        xbmc.PlayList(playlist).add(url, li, position)
-        xbmc.log("%s: Queue plugin URI %s %s" % (addon_id, label, url), xbmc.LOGNOTICE)
-    else:
-        try:
-            li, file_url = resolveURL(url, label)
-            xbmc.PlayList(playlist).add(file_url, li, position)
-            xbmc.log("%s: Queue resolved URI %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
-        except:
-            xbmc.log("%s: Unhandled exception %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
+    queueVideo(url, label, playlist, position)
 elif mode == 'test':
     print "Do nothing, yet"
     pass
