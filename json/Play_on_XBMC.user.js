@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-01-09
-// @version     20
+// @version     20a
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @grant       GM_addStyle
@@ -566,30 +566,17 @@ function play_movie_directly(context) {
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
-				+ '"params":{"item": { "file" : "' + context['encoded']
-				+ '" }}, "id" : 1}',
+		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
+			+ '"params": {  "addonid":"script.anyurl.player",'
+			+ '"params" : {' + '"mode" : "play_video", ' + '"title" : "'
+			+ context['title'] + '", "url" : "' + context['encoded']
+			+ '", "playlistid" : "' + context['playlistid'] + '", "position" : "'
+			+ context['position'] + '"' + ' } } }',
 		onload : function(response) {
 			show_ui_msg("PLAYING", 2000);
 			console.log('Playing video');
 		}
 	});
-	/* Clear playlist */
-	setTimeout(function() {
-		GM_xmlhttpRequest({
-			method : 'POST',
-			url : 'http://' + xbmc_address + '/jsonrpc',
-			headers : {
-				"Content-type" : "application/json"
-			},
-			timeout : 6000,
-			data : '{"jsonrpc": "2.0", "method": "Playlist.Clear", '
-					+ '"params":{"playlistid" : ' + xbmc_video_playlist
-					+ '}, "id" : 1}',
-			onerror : xbmc_json_error,
-			ontimeout : xbmc_json_timeout,
-		});
-	}, 5000);
 }
 
 function open_video_playlist() {
@@ -1139,15 +1126,6 @@ function url_is_playlist(video_url) {
  */
 function encode_url_for_queueing(video_url) {
 	switch (current_host) {
-	case "youtube.com":
-	case "youtu.be":
-		/*
-		 * Youtube has it's own playlists, but Kodi doesn't support queueing a
-		 * list within another list. Thus, we queue only current video.
-		 */
-		var yt_params = parse_yt_params(video_url);
-		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
-		break;
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
 				+ encodeURIComponent(video_url) + '&icon=a';
