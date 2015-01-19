@@ -27,6 +27,8 @@ class MyPlayer(xbmc.Player):
         #   and resolve Youtube (and others in the future) videos in advance
         playlist = xbmc.PlayList(self._playlist)
         position = playlist.getposition() + 1
+        if (int(position) >= int(playlist.size())):
+            position = 0
         resolvePlaylist(self._playlist, position)
         self._processed = True
 
@@ -131,20 +133,25 @@ def queueVideo(url, label, playlist, position):
 
 ''' Recursive function to resolve "plugin://" adresses '''
 def resolvePlaylist(playlist_id, position):
-    xbmc.log("%s Looking for plugins in playlist %d from %d" % (addon_id, playlist_id, position))
+    xbmc.log("%s Looking for plugins in playlist %d from %d" % (addon_id, playlist_id, position), xbmc.LOGDEBUG)
     playlist = xbmc.PlayList(playlist_id)
-    if (int(position) < int(playlist.size())):
+    matched = False
+    while (not matched and (int(position) < int(playlist.size()))):
         item = playlist[position]
         url_parts = string.split(item.getfilename(),'?',2)
         args = urlparse.parse_qs(url_parts[1])
         if (re.match('plugin://plugin.video.youtube', url_parts[0])):
+            matched = True
             url = reencodeYT(args.get('video_id', [''])[0])
             if not replaceItem(url,item.getLabel(), playlist_id, position):
                 position -= 1
         # Try next item on the list
         position += 1
-        if (int(position) < int(playlist.size())):
-            xbmc.executebuiltin("RunScript(script.anyurl.player,mode=resolve_plugin,position=%d,playlist=%d)" % (position, playlist_id))
+    if (int(position) < int(playlist.size())):
+        xbmc.executebuiltin("RunScript(script.anyurl.player,mode=resolve_plugin,position=%d,playlist=%d)" % (position, playlist_id))
+    else:
+        xbmc.log("%s Finished scanning playlist" % (addon_id), xbmc.LOGDEBUG)
+
 
 def replaceItem(url, label, playlist, position):
     orig = xbmc.PlayList(playlist)[position]
@@ -187,7 +194,6 @@ elif mode == 'resolve_plugin':
     resolvePlaylist(playlist, position)
 elif mode == 'test':
     print "Do nothing, yet"
-    xbmc.executebuiltin("RunScript(script.anyurl.player,mode=resolve_plugin,position=0,playlist=1)")
     pass
 else:
     xbmc.log("%s: Nothing to play" % (addon_id), xbmc.LOGNOTICE)
