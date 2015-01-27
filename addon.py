@@ -1,13 +1,14 @@
-import re, sys, string
+import re, os, sys, string
 import urlparse
 
 import urllib2
-import urlresolver
-from urlresolver.types import HostedMediaFile
 import xbmc
 import xbmcgui
 import xbmcaddon
 import xbmcplugin
+
+_locallib_path = os.path.dirname(os.path.realpath(__file__)) + "/lib/"
+sys.path.append(_locallib_path)
 
 def reencodeYT(video_id):
     return "http://www.youtube.com/watch?v="+video_id
@@ -61,12 +62,8 @@ def createLabels(li):
 
 ''' Try to resolve URL '''
 def resolveURL(url,label):
-    if (re.match('plugin:', url)):
-        # No need to resolve anything
-        li = xbmcgui.ListItem(label = label, path=url)
-        li.setProperty('IsPlayable', 'true')
-        li.setInfo(type="Video", infoLabels=createLabels(li))
-        return (li, url)
+    from urlresolver.types import HostedMediaFile
+
     if True:
         pass
     try:
@@ -79,14 +76,20 @@ def resolveURL(url,label):
         if li:
             li.setProperty('IsPlayable', 'true')
             li.setInfo(type="Video", infoLabels=createLabels(li))
-            return (li, file_url)
-        if file_url:
+        elif file_url:
             li = xbmcgui.ListItem(label = label, path = file_url)
             li.setProperty('IsPlayable', 'true')
             li.setInfo(type="Video", infoLabels=createLabels(li))
-            return (li, file_url)
+        elif (re.match('plugin:', url)):
+            # No need to resolve anything
+            li = xbmcgui.ListItem(label = label, path=url)
+            li.setProperty('IsPlayable', 'true')
+            li.setInfo(type="Video", infoLabels=createLabels(li))
+            file_url = url
         else:
             xbmc.log("%s: Non playable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
+            return None
+        return (li, file_url)
     except KeyError:
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
     except:
@@ -125,7 +128,7 @@ def queueVideo(url, label, playlist, position):
         li, file_url = resolveURL(url, label)
         if file_url:
             xbmc.PlayList(playlist).add(file_url, li, position)
-            xbmc.log("%s: Queue resolved URI: %s" % (addon_id, li.getLabel()), xbmc.LOGNOTICE)
+            xbmc.log("%s: Queue resolved URI: %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
     except:
         xbmc.log("%s: Unhandled exception @queueVideo %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
         return False

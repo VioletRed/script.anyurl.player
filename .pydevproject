@@ -7,5 +7,7 @@
 </pydev_pathproperty>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/opt/src/addons-kodi/xbmcstubs</path>
+<path>/opt/src/addons-kodi/script.module.t0mm0.common/lib</path>
+<path>/opt/src/addons-kodi/script.module.urlresolver/lib</path>
 </pydev_pathproperty>
 </pydev_project>
