@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-01-09
-// @version     20a
+// @version     21
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @grant       GM_addStyle
@@ -48,14 +48,19 @@ GM_config.init({
 		// Default value if user doesn't change it
 		}
 	},
-	'css':'background:#103040;'
+	'css' : 'background:#103040;'
 });
 
 var xbmc_address = GM_config.get('XBMC_ADDRESS');
 var xbmc_queued = null;
-const xbmc_music_playlist = 0; // Queue for party mode
-const xbmc_video_playlist = 1; // Queue for video mode
-const is_playlist = 1;
+const
+xbmc_music_playlist = 0; // Queue for party mode
+const
+xbmc_video_playlist = 1; // Queue for video mode
+const
+xbmc_partylist_size = -10
+const
+is_playlist = 1;
 // Remove known top domain names (i.e 'www', 'm', 'embed')
 var top_domain = /^www\.|^m\.|^embed\./
 var current_host = window.location.host.toLowerCase().replace(top_domain, '');
@@ -552,36 +557,76 @@ Stop_30_png = "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAABmJLR0QA/wD/AP+g"
  */
 
 function xbmc_json_error(response) {
+	remove_ui_msg();
 	consoloe.log("XBMC JSON Error")
 }
 
 function xbmc_json_timeout(response) {
+	remove_ui_msg();
 	consoloe.log("XBMC JSON Timeout")
 }
 
-function play_movie_directly(context) {
+function execute_anyurl_command(context, command, last_step) {
+	anyurl_command = '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
+			+ '"params": {  "addonid":"script.anyurl.player",'
+			+ '"params" : {'
+			+ '"mode" : "' + command + '"';
+	if (context['title'] != undefined) {
+		anyurl_command += ', "title": "' + context['title'] + '"';
+	}
+	if (context['url'] != undefined) {
+		anyurl_command += ', "url" : "' + context['encoded'] + '"';
+	}
+	if (context['playlistid'] != undefined) {
+		anyurl_command += ', "playlistid" : "' + context['playlistid'] + '"';
+	}
+	if (context['position'] != undefined) {
+		anyurl_command += ', "position" : "' + context['position'] + '"';
+	}
+	if (context['description'] != undefined) {
+		anyurl_command += ', "description" : "' + context['description'] + '"';
+	}
+	anyurl_command += ' } } }';
+
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
-			+ '"params": {  "addonid":"script.anyurl.player",'
-			+ '"params" : {' + '"mode" : "play_video", ' + '"title" : "'
-			+ context['title'] + '", "url" : "' + context['encoded']
-			+ '", "playlistid" : "' + context['playlistid'] + '", "position" : "'
-			+ context['position'] + '"' + ' } } }',
+		data : anyurl_command,
+		onload : last_step
+	});
+}
+
+function open_video_player(context) {
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			"Content-type" : "application/json"
+		},
+		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
+				+ '"params":{"item": { "file" : "'
+				+ context['encoded'] + '" }}, "id" : 1}',
 		onload : function(response) {
-			show_ui_msg("PLAYING", 2000);
-			console.log('Playing video');
+			show_ui_msg("PLAYING", 4000);
+			console.log('Playing video directly');
+			setTimeout(function() {
+				local_context = {};
+				local_context['position'] = 0;
+				local_context['playlistid'] = 1;
+				execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
+					console.log("Resolve playlist");
+				})
+			}, 5000)
 		}
 	});
 }
 
-function open_video_playlist() {
-	console.log('New video queue');
+function open_video_playlist(context) {
 	setTimeout(function() {
+		console.log('Playing new video list');
 		GM_xmlhttpRequest({
 			method : 'POST',
 			url : 'http://' + xbmc_address + '/jsonrpc',
@@ -593,10 +638,19 @@ function open_video_playlist() {
 					+ xbmc_video_playlist + ' }}, "id" : 1}',
 			onload : function(response) {
 				console.log('Playing video');
-				show_ui_msg("PLAYING", 2000);
+				show_ui_msg("PLAYING", 4000);
 			}
 		});
-	}, 4000);
+	}, 2000);
+	/* Resolve the whole playlist, just in case */
+	setTimeout(function() {
+		local_context = {};
+		local_context['position'] = 0;
+		local_context['playlistid'] = 1;
+		execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
+			console.log("Resolve playlist");
+		})
+	}, 30000)
 }
 
 function play_in_new_playlist(context) {
@@ -609,22 +663,24 @@ function play_in_new_playlist(context) {
 		headers : {
 			"Content-type" : "application/json"
 		},
-		timeout : 6000,
 		data : '{"jsonrpc": "2.0", "method": "Playlist.Clear", '
 				+ '"params":{"playlistid" : ' + xbmc_video_playlist
 				+ '}, "id" : 1}',
 		onload : function(response) {
 			/* Add movies to Video playlist */
 			xbmc_queued = "";
-			context['encoded'] = encode_url_for_new_playlist(context['url']);
+			context['encoded'] = encode_url_for_new_playlist(context);
 			if (context['is_playlist']) {
-				play_movie_directly(context);
+				open_video_player(context);
 			} else {
-				queue_movie_and_play(context);
+				context['position'] = 0;
+				queue_movie_at(context);
+				open_video_playlist(context)
 			}
 		},
 		onerror : xbmc_json_error,
 		ontimeout : xbmc_json_timeout,
+		timeout : 6000
 	});
 }
 
@@ -632,6 +688,7 @@ function queue_movie_at(context) {
 	if (xbmc_queued == context['url']) {
 		// Show somehow that this action was already completed
 		console.log("Already queued " + xbmc_queued);
+		show_ui_msg("QUEUEED", 1000);
 		return;
 	}
 	GM_xmlhttpRequest({
@@ -640,64 +697,34 @@ function queue_movie_at(context) {
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
-				+ '"params": {  "addonid":"script.anyurl.player",'
-				+ '"params" : {' + '"mode" : "queue_video", ' + '"title" : "'
-				+ context['title'] + '", "url" : "' + context['encoded']
-				+ '", "playlistid" : "' + context['playlistid'] + '", "position" : "'
-				+ context['position'] + '"' + ' } } }',
+		data : '{"jsonrpc": "2.0", "method": "Playlist.Insert", '
+				+ '"params":{"item": { "file" : "' + context['encoded']
+				+ '" }, "playlistid" :' + context['playlistid']
+				+ ', "position" : ' + context['position'] + ' }, "id" : 1}',
 		onerror : xbmc_json_error,
 		ontimeout : xbmc_json_timeout,
+		timeout : 6000,
 		onload : function(response) {
 			xbmc_queued = context['url'];
-			show_ui_msg("QUEUEED", 5000);
-			console.log('Queueing video');
+			execute_anyurl_command(context, 'resolve_single_plugin', function(
+					response) {
+				show_ui_msg("QUEUEED", 4000);
+			})
 		}
 	})
 }
 
-function queue_movie_and_play(context) {
-	if (xbmc_queued == context['url']) {
-		// Show somehow that this action was already completed
-		console.log("Already queued " + xbmc_queued);
-		return;
-	}
+function queue_in_party_mode(context, pos) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			"Content-type" : "application/json"
 		},
-		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
-				+ '"params": {  "addonid":"script.anyurl.player",'
-				+ '"params" : {' + '"mode" : "queue_video", ' + '"title" : "'
-				+ context['title'] + '", "url" : "' + context['encoded']
-				+ '", "playlistid" : "' + context['playlistid'] + '"' + ' } } }',
-		onload : function(response) {
-			var result = JSON.parse(response.responseText);
-			if (result.result == "OK") {
-				xbmc_queued = context['url'];
-				open_video_playlist();
-				return 0;
-			} else {
-			}
-		},
-		onerror : xbmc_json_error,
-		ontimeout : xbmc_json_timeout
-	});
-	return -1;
-}
-
-function queue_in_party_mode(context) {
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			"Content-type" : "application/json"
-		},
-		data : '{"jsonrpc": "2.0", "method": "Playlist.GetItems",'
-				+ '"params":{"playlistid" : ' + context['playlistid']
-				+ '}, "id" : 1}',
+		data : '{"jsonrpc": "2.0", "id" : 1, "method": "Playlist.GetItems",'
+				+ '"params":{"playlistid" : ' + context['playlistid'] + '}}',
+		ontimeout : xbmc_json_timeout,
+		timeout : 10000,
 		onload : function(response) {
 			var xbmc_response = JSON.parse(response.responseText);
 			if (xbmc_response.result.limits == undefined) {
@@ -706,37 +733,17 @@ function queue_in_party_mode(context) {
 			}
 			// Queue exist, enqueue media at the end of user
 			// selection
-			context['position'] = xbmc_response.result.limits.end - 9;
-			console.log("XBMC queue size is " + xbmc_queue_depth);
-			queue_movie_at(context);
-		}
-	})
-}
-
-function queue_in_playlist(context) {
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			"Content-type" : "application/json"
-		},
-		data : '{"jsonrpc": "2.0", "method": "Playlist.GetItems",'
-				+ '"params":{"playlistid" : ' + xbmc_video_playlist
-				+ '}, "id" : 1}',
-		onload : function(response) {
-			var xbmc_response = JSON.parse(response.responseText);
-			if (xbmc_response.result.limits == undefined
-					|| xbmc_response.result.limits.end == 0) {
-				console.log("Playlist.GetItems bad response");
-				play_in_new_playlist(context)
-				return;
+			if (pos < 0) {
+				context['position'] = xbmc_response.result.limits.end - pos + 1;
+			} else if (pos > xbmc_response.result.limits.end) {
+				context['position'] = xbmc_response.result.limits.end;
 			}
-			// Queue exist, enqueue media at the end of user
-			// selection
+			console.log("Queue in playlist " + context['playlistid'] + "at "
+					+ context['position']);
+			GM_setValue('QUEUE_POSITION', context['position'] + 1);
 			queue_movie_at(context);
-			GM_setValue('QUEUE_POSITION', context['position']+1);
 		}
-	})
+	});
 }
 
 /* */
@@ -748,8 +755,11 @@ function config_script() {
 function queue_movie() {
 	var context = {};
 	context['url'] = document.documentURI;
-	context['title'] = encodeURIComponent(document.title);
-	context['encoded'] = encode_url_for_queueing(context['url']);
+	context['title'] = encodeURIComponent(get_meta_contents("title",
+			document.title));
+	context['description'] = encodeURIComponent(get_meta_contents(
+			"description", context['description']));
+	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = xbmc_video_playlist;
 	context['position'] = GM_getValue('QUEUE_POSITION', 0);
@@ -769,6 +779,7 @@ function queue_movie() {
 				+ '"params":{}, "id" : 1}',
 		onerror : xbmc_json_error,
 		ontimeout : xbmc_json_timeout,
+		timeout : 6000,
 		onload : function(response) {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined
@@ -789,28 +800,24 @@ function queue_movie() {
 						+ ', "properties" :  [ "playlistid" , "partymode", "position" ] }, "id" : 1}',
 				onload : function(response) {
 					var xbmc_properties = JSON.parse(response.responseText);
+					context['playlistid'] = xbmc_properties.result.playlistid;
 					if (xbmc_properties.result.partymode == true) {
-						context['playlistid'] = xbmc_properties.result.playlistid;
-						console.log("Party mode, default play");
-						queue_in_party_mode(context);
-						return;
-					}
-					if (xbmc_active.result[0].playerid != 1) {
-						console.log("Playing music, create a new queue");
-						play_in_new_playlist(context);
+						queue_in_party_mode(context, xbmc_partylist_size);
 					} else {
 						if (context['position'] <= xbmc_properties.result.position) {
 							context['position'] = xbmc_properties.result.position + 1;
 						}
-						console.log("Queue in playlist at " + context['position']);
-						queue_in_playlist(context);
+						queue_in_party_mode(context, context['position']);
 					}
 				},
 				onerror : function(response) {
 					/* No active playlist */
 					console.log("Not playing playlist, queue and play")
 					play_in_new_playlist(context);
-				}
+					xbmc_json_error();
+				},
+				ontimeout : xbmc_json_timeout,
+				timeout : 6000,
 			});
 		}
 	});
@@ -830,16 +837,28 @@ function pause_movie() {
 		},
 		data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":1}, "id" : 1}'
 	});
-}
-
-function stop_movie() {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			'Content-Type' : 'application/json'
 		},
+		data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":0}, "id" : 1}'
+	});
+}
+
+function stop_movie() {
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {	'Content-Type' : 'application/json'	},
 		data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":1}, "id" : 1}'
+	});
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {	'Content-Type' : 'application/json' },
+		data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":0}, "id" : 1}'
 	});
 	xbmc_queued = "";
 }
@@ -848,10 +867,14 @@ function next_movie() {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			'Content-Type' : 'application/json'
-		},
+		headers : {	'Content-Type' : 'application/json' },
 		data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 1, "to" : "next" }, "id" : 1}'
+	});
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : { 'Content-Type' : 'application/json'	},
+		data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 0, "to" : "next" }, "id" : 1}'
 	});
 	xbmc_queued = "";
 }
@@ -861,7 +884,7 @@ function next_movie() {
  * UI functions
  * ============================================================================
  */
-function remove_playing_msg() {
+function remove_ui_msg() {
 	try {
 		xbmc_ui.removeChild(xbmc_title);
 	} catch (e) {
@@ -875,10 +898,10 @@ function remove_playing_msg() {
 }
 
 function show_ui_msg(msg, timeout) {
-	remove_playing_msg();
+	remove_ui_msg();
 	xbmc_title.innerHTML = msg;
 	xbmc_ui.insertBefore(xbmc_title, xbmc_play_control);
-	xbmc_msg_timer = setTimeout(remove_playing_msg, timeout);
+	xbmc_msg_timer = setTimeout(remove_ui_msg, timeout);
 }
 
 function add_play_on_xbmc_buttons() {
@@ -1089,6 +1112,18 @@ function binarySearch(items, value) {
 }
 
 /*
+ * Read metadata
+ */
+function get_meta_contents(mn, dv) {
+	var m = document.getElementsByTagName('meta');
+	for ( var i in m) {
+		if (m[i].name == mn) {
+			return m[i].content;
+		}
+	}
+	return dv;
+}
+/*
  * Youtube has more features than most streaming sites,it needs special
  * treatment
  */
@@ -1119,21 +1154,7 @@ function url_is_playlist(video_url) {
 /*
  * URI to send to AnyURL script in Kodi.
  */
-function encode_url_for_queueing(video_url) {
-	switch (current_host) {
-	case "ted.com":
-		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(video_url) + '&icon=a';
-		break;
-	}
-	/* All other domains just use current URL */
-	return encodeURIComponent(video_url);
-}
-
-/*
- * URI to send to a new playist.
- */
-function encode_url_for_new_playlist(video_url) {
+function encode_url_for_queueing(context) {
 	switch (current_host) {
 	case "youtube.com":
 	case "youtu.be":
@@ -1141,7 +1162,38 @@ function encode_url_for_new_playlist(video_url) {
 		 * Better talk to YouTube plugin directly, it allows for more flexible
 		 * use
 		 */
-		var yt_params = parse_yt_params(video_url);
+		var yt_params = parse_yt_params(context['url']);
+		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
+		break;
+	case "ted.com":
+		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
+				+ encodeURIComponent(context['url']) + '&icon=a';
+		break;
+	}
+	/* URL needs extra processing on Kodi's side */
+	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
+			+ encodeURIComponent(context['url']);
+	if (context['title'] != undefined) {
+		anyurl_command += '&title=' + context['title'];
+	}
+	if (context['description'] != undefined) {
+		anyurl_command += '&description=' + context['description'];
+	}
+	return anyurl_command
+}
+
+/*
+ * URI to send to a new playist.
+ */
+function encode_url_for_new_playlist(context) {
+	switch (current_host) {
+	case "youtube.com":
+	case "youtu.be":
+		/*
+		 * Better talk to YouTube plugin directly, it allows for more flexible
+		 * use
+		 */
+		var yt_params = parse_yt_params(context['url']);
 		if (yt_params["list"]) {
 			result = 'plugin://plugin.video.youtube/play/?play=1&order=default&playlist_id='
 					+ yt_params["list"];
@@ -1150,15 +1202,9 @@ function encode_url_for_new_playlist(video_url) {
 			}
 			return result;
 		}
-		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
-		break;
-	case "ted.com":
-		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(video_url) + '&icon=a';
 		break;
 	}
-	return 'plugin://script.anyurl.player/?mode=play_video&url='
-			+ encodeURIComponent(video_url);
+	return encode_url_for_queueing(context)
 }
 
 /* Add buttons only if necessary */
