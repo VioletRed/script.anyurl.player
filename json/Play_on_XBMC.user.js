@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-01-30
-// @version     22
+// @version     22a
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/testing/json/UI_Elements.js
@@ -362,7 +362,7 @@ function queue_movie() {
 					context['playlistid'] = xbmc_properties.result.playlistid;
 					// If the player is not playing the playlist, 
 					// assume the other playlist is active
-					if (xbmc_properties.result.position = -1) {
+					if (xbmc_properties.result.position == -1) {
 						if (context['playlistid'] == xbmc_video_playlist) {
 							context['playlistid'] = xbmc_music_playlist
 						} else {
