@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-01-09
-// @version     21
+// @date        2015-01-30
+// @version     22
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/testing/json/UI_Elements.js
@@ -43,22 +43,26 @@ GM_config.init({
 		// change it
 		},
 		'USE_BIG' : {
-			'label' : 'Use big buttons', // Appears next to field
-			'type' : 'checkbox', // Makes this setting a checkbox input
+			'label' : 'Use big buttons',
+			'type' : 'checkbox',
 			'default' : false
 		// Default value if user doesn't change it
 		},
 		'RESOLVE' : {
-			'label' : 'Try to resolve queued elements (hack!)', // Appears next to field
-			'type' : 'checkbox', // Makes this setting a checkbox input
+			'label' : 'Try to resolve queued elements (hack!)',
+			'type' : 'checkbox',
 			'default' : false
 		// Default value if user doesn't change it
 		}
 	},
-	'css' : 'background:#103040;'
+	'css' : 'background:#103040;',
+	'events' : { // Callback functions object
+		'save' : function() { GM_config.close(); },
+		'close' : init_xbmc_support,
+	}
 });
 
-var xbmc_address = GM_config.get('XBMC_ADDRESS');
+var xbmc_address = null;
 var xbmc_queued = null;
 const
 xbmc_music_playlist = 0; // Queue for party mode
@@ -89,12 +93,12 @@ var xbmc_msg_timer = null;
  */
 
 function xbmc_json_error(response) {
-	remove_ui_msg();
+	show_ui_msg("ERROR", 3000);
 	consoloe.log("XBMC JSON Error")
 }
 
 function xbmc_json_timeout(response) {
-	remove_ui_msg();
+	show_ui_msg("TIMEOUT", 3000);
 	consoloe.log("XBMC JSON Timeout")
 }
 
@@ -289,14 +293,31 @@ function config_script() {
 	GM_config.open();
 }
 
+/* Read GM_config information */
+function init_xbmc_support() {
+	xbmc_address = GM_config.get('XBMC_ADDRESS');
+}
+
+
 /* Send link to Kodi */
 function queue_movie() {
 	var context = {};
 	context['url'] = document.documentURI;
-	context['title'] = encodeURIComponent(get_meta_contents("title",
-			document.title));
-	context['description'] = encodeURIComponent(get_meta_contents(
-			"description", context['description']));
+	if (document.getElementById("eow-title")) { // Youtube
+		context['title'] = document.getElementById("eow-title").textContent;
+		context['title'] = context['title'].replace(/\n/gm, '');
+		context['title'] = context['title'].replace(/^\s*/gm, '');
+		context['title'] = context['title'].replace(/\s*$/gm, '');
+	} else { // Everybody else
+		context['title'] = encodeURIComponent(get_meta_contents("title",
+				document.title));
+	}
+	if (document.getElementById("eow-description")) { // Youtube
+		context['description'] = document.getElementById("eow-description").textContent;
+	} else { // Everybody else
+		context['description'] = encodeURIComponent(get_meta_contents(
+				"description", context['title']));
+	}
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = xbmc_video_playlist;
@@ -375,54 +396,36 @@ function queue_movie() {
  * Movie control functions
  * ============================================================================
  */
-function pause_movie() {
+function player_command(cmd, playlist, params) {
+	var cmd_data = '{"jsonrpc":"2.0", "id" : 1, "method":"Player.' + cmd
+			+ '", "params":{"playerid":' + playlist;
+	if (params != undefined)
+		cmd_data += ', ' + params;
+	cmd_data += '} }';
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
 		headers : {
 			'Content-Type' : 'application/json'
 		},
-		data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":1}, "id" : 1}'
-	});
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			'Content-Type' : 'application/json'
-		},
-		data : '{"jsonrpc":"2.0", "method":"Player.PlayPause", "params":{"playerid":0}, "id" : 1}'
+		data : cmd_data
 	});
 }
 
+function pause_movie() {
+	player_command('PlayPause', xbmc_video_playlist);
+	player_command('PlayPause', xbmc_music_playlist);
+}
+
 function stop_movie() {
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {	'Content-Type' : 'application/json'	},
-		data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":1}, "id" : 1}'
-	});
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {	'Content-Type' : 'application/json' },
-		data : '{"jsonrpc":"2.0", "method": "Player.Stop", "params":{"playerid":0}, "id" : 1}'
-	});
+	player_command('Stop', xbmc_video_playlist);
+	player_command('Stop', xbmc_music_playlist);
 	xbmc_queued = "";
 }
 
 function next_movie() {
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {	'Content-Type' : 'application/json' },
-		data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 1, "to" : "next" }, "id" : 1}'
-	});
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : { 'Content-Type' : 'application/json'	},
-		data : '{"jsonrpc": "2.0", "method": "Player.GoTo", "params":{"playerid" : 0, "to" : "next" }, "id" : 1}'
-	});
+	player_command('GoTo', xbmc_video_playlist, '"to":"next"');
+	player_command('GoTo', xbmc_music_playlist, '"to":"next"');
 	xbmc_queued = "";
 }
 
@@ -629,14 +632,13 @@ function binarySearch(items, value) {
 }
 
 /*
- * Read metadata
+ * Read metadata from HTML tags
  */
 function get_meta_contents(mn, dv) {
-	var m = document.getElementsByTagName('meta');
-	for ( var i in m) {
-		if (m[i].name == mn) {
-			return m[i].content;
-		}
+	var d = document;
+	var m = d.getElementsByTagName('meta'); // meta tags in body
+	for ( var i in m ) {
+		if (m[i].name == mn) return m[i].content;
 	}
 	return dv;
 }
@@ -724,8 +726,10 @@ function encode_url_for_new_playlist(context) {
 	return encode_url_for_queueing(context)
 }
 
+
 /* Add buttons only if necessary */
 if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
+	init_xbmc_support();
 	// First run?
 	if (xbmc_address == '<host>:<port>')
 		config_script();
