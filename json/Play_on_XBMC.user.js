@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-01-30
-// @version     22a
+// @date        2015-02-02
+// @version     22b
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/testing/json/UI_Elements.js
@@ -152,7 +152,7 @@ function open_video_player(context) {
 				+ '"params":{"item": { "file" : "'
 				+ context['encoded'] + '" }}, "id" : 1}',
 		onload : function(response) {
-			show_ui_msg("PLAYING", 4000);
+			setTimeout(function() {show_ui_msg("PLAYING", 4000);}, 2000);
 			console.log('Playing video directly');
 			setTimeout(function() {
 				local_context = {};
@@ -250,7 +250,7 @@ function queue_movie_at(context) {
 			xbmc_queued = context['url'];
 			execute_anyurl_command(context, 'resolve_single_plugin', function(
 					response) {
-				show_ui_msg("QUEUEED", 4000);
+				setTimeout(function() {show_ui_msg("QUEUEED", 4000);}, 2000);
 			})
 		}
 	})
@@ -308,12 +308,14 @@ function queue_movie() {
 		context['title'] = context['title'].replace(/\n/gm, '');
 		context['title'] = context['title'].replace(/^\s*/gm, '');
 		context['title'] = context['title'].replace(/\s*$/gm, '');
+		context['title'] = encodeURIComponent(context['title']);
 	} else { // Everybody else
 		context['title'] = encodeURIComponent(get_meta_contents("title",
 				document.title));
 	}
 	if (document.getElementById("eow-description")) { // Youtube
-		context['description'] = document.getElementById("eow-description").textContent;
+		context['description'] = encodeURIComponent(document.getElementById(
+				"eow-description").textContent);
 	} else { // Everybody else
 		context['description'] = encodeURIComponent(get_meta_contents(
 				"description", context['title']));
