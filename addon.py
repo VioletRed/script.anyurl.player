@@ -55,11 +55,6 @@ def getArg(args, label, default=None):
             return arg[match.end():]
     return default
 
-''' Create video labels '''
-def createLabels(li):
-    infoLabels={"Studio":"","ShowTitle":"","Title":li.getLabel()}
-    return infoLabels
-
 ''' Try to resolve URL '''
 def resolveURL(url, label, description=''):
     from urlresolver.types import HostedMediaFile
@@ -82,7 +77,9 @@ def resolveURL(url, label, description=''):
             xbmc.log("%s: Non playable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
             return (None, '')
         li.setProperty('IsPlayable', 'true')
-        li.setInfo(type="video", infoLabels=createLabels(li))
+        infolabels={"Studio":"","ShowTitle":"","Title":label,
+                "plot":description, 'plotoutline': description}
+        li.setInfo(type="video", infoLabels=infolabels)
         return (li, file_url)
     try:
         pass
@@ -145,7 +142,9 @@ def resolvePlaylist(playlist_id, position):
         # Try next item on the list
         if resolvePlaylistElement(playlist_id, position):
             position += 1
+            matched = True
     if (int(position) < int(playlist.size())):
+        xbmc.sleep(10000) # Resolve one video every 10 seconds
         xbmc.executebuiltin("RunScript(script.anyurl.player,mode=resolve_plugin,position=%d,playlist=%d)" % (position, playlist_id))
     else:
         xbmc.log("%s Finished scanning playlist" % (addon_id), xbmc.LOGDEBUG)
@@ -164,6 +163,8 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
         url = args.get('url',[''])[0]
         if not label: label = args.get('label',[''])[0]
         if not description: description = args.get('description',[''])[0]
+    else:
+        return True
     if (url and label):
         return replaceItem(playlist_id, position, url, label)
     return True
