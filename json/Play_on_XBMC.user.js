@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-02-02
-// @version     22b
+// @date        2015-02-07
+// @version     22c
 // @include     *
 // @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/testing/json/UI_Elements.js
@@ -167,6 +167,7 @@ function open_video_player(context) {
 }
 
 function open_video_playlist(context) {
+	console.log("About to open playlist");
 	setTimeout(function() {
 		console.log('Playing new video list');
 		GM_xmlhttpRequest({
@@ -183,16 +184,17 @@ function open_video_playlist(context) {
 				show_ui_msg("PLAYING", 4000);
 			}
 		});
-	}, 2000);
+	}, 3500);
 	/* Resolve the whole playlist, just in case */
 	setTimeout(function() {
 		local_context = {};
 		local_context['position'] = 0;
 		local_context['playlistid'] = 1;
+		console.log("About to resolve");
 		execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
 			console.log("Resolve playlist");
 		})
-	}, 30000)
+	}, 40000)
 }
 
 function play_in_new_playlist(context) {
@@ -371,6 +373,8 @@ function queue_movie() {
 							context['playlistid'] = xbmc_video_playlist
 						}
 					}
+					console.log("Now playing " + xbmc_properties.result.position);
+					console.log("Want to insert at " + context['position']);
 					if (xbmc_properties.result.partymode == true) {
 						queue_in_party_mode(context, xbmc_partylist_size);
 					} else {
