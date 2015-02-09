@@ -61,6 +61,8 @@ def resolveURL(url, label, description=''):
 
     if True:
         pass
+    try:
+        pass
         media_source = HostedMediaFile(url)
         xbmc.log("Resolving %s" % url, xbmc.LOGDEBUG)
         file_url = media_source.resolve()
@@ -69,20 +71,16 @@ def resolveURL(url, label, description=''):
         if li: pass
         elif file_url:
             li = xbmcgui.ListItem(label = label, path = file_url)
-        elif (re.match('plugin:', url)):
+        else:
             # No need to resolve anything
+            xbmc.log("%s: Non resolvable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
             li = xbmcgui.ListItem(label = label, path=url)
             file_url = url
-        else:
-            xbmc.log("%s: Non playable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
-            return (None, '')
         li.setProperty('IsPlayable', 'true')
         infolabels={"Studio":"","ShowTitle":"","Title":label,
                 "plot":description, 'plotoutline': description}
         li.setInfo(type="video", infoLabels=infolabels)
         return (li, file_url)
-    try:
-        pass
     except KeyError:
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
     except:
@@ -163,8 +161,6 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
         url = args.get('url',[''])[0]
         if not label: label = args.get('label',[''])[0]
         if not description: description = args.get('description',[''])[0]
-    else:
-        return True
     if (url and label):
         return replaceItem(playlist_id, position, url, label)
     return True
@@ -205,7 +201,8 @@ except:
     playlist = int(getArg(sys.argv, 'playlistid', '1'))
 
 if mode == 'play_video':
-    playVideo(url=url, label=label, playlist_id=playlist)
+    if addon_handle: # Can't play video without a handle
+        playVideo(url=url, label=label, playlist_id=playlist)
 elif mode == 'queue_video':
     queueVideo(url=url, label=label, playlist_id=playlist, position=position)
 elif mode == 'resolve_plugin':
