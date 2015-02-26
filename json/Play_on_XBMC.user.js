@@ -6,11 +6,11 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-02-07
-// @version     22c
+// @date        2015-02-26
+// @version     23
 // @include     *
-// @require     https://raw.github.com/sizzlemctwizzle/GM_config/master/gm_config.js
-// @require     https://github.com/VioletRed/script.anyurl.player/raw/testing/json/UI_Elements.js
+// @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
+// @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
 // @grant       GM_addStyle
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -106,6 +106,7 @@ function execute_anyurl_command(context, command, last_step) {
 	// Don't try to resolve by default
 	// Resolving is kind of a hack, and might not behave
 	if (!GM_config.get('RESOLVE')) {
+		last_step();
 		return
 	}
 
