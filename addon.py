@@ -68,18 +68,23 @@ def resolveURL(url, label, description=''):
         file_url = media_source.resolve()
         li = None
         if hasattr(media_source, "get_list_item"): li = media_source.get_list_item()
-        if li: pass
-        elif file_url:
+
+        if li: # Do nothing if resolver can create a ListItem
+            pass
+        elif file_url: # Resolved, but not with metadata
             li = xbmcgui.ListItem(label = label, path = file_url)
-        else:
-            # No need to resolve anything
+            infolabels={"Studio":"","ShowTitle":"","Title":label,
+                        "plot":description, 'plotoutline': description}
+            li.setInfo(type="video", infoLabels=infolabels)
+        else: # No need to resolve anything
             xbmc.log("%s: Non resolvable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
             li = xbmcgui.ListItem(label = label, path=url)
             file_url = url
+            infolabels={"Studio":"","ShowTitle":"","Title":label,
+                        "plot":description, 'plotoutline': description}
+            li.setInfo(type="video", infoLabels=infolabels)
+
         li.setProperty('IsPlayable', 'true')
-        infolabels={"Studio":"","ShowTitle":"","Title":label,
-                "plot":description, 'plotoutline': description}
-        li.setInfo(type="video", infoLabels=infolabels)
         return (li, file_url)
     except KeyError:
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
@@ -156,7 +161,8 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
     else: return True # Nothing to resolve
     if (re.match('plugin://plugin.video.youtube', url_parts[0])):
         url = reencodeYT(args.get('video_id', [''])[0])
-        label = item.getLabel()
+        if not label: label = args.get('label',[''])[0]
+        if not description: description = args.get('description',[''])[0]
     elif (re.match('plugin://script.anyurl.player', url_parts[0])):
         url = args.get('url',[''])[0]
         if not label: label = args.get('label',[''])[0]
