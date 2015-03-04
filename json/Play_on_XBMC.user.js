@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-02-26
-// @version     23
+// @version     23b
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -39,21 +39,24 @@ GM_config.init({
 		{
 			'label' : 'Host', // Appears next to field
 			'type' : 'text', // Makes this setting a text field
-			'default' : '<host>:<port>' // Default value if user doesn't
-		// change it
+			'default' : '<host>:<port>' // Default value if user doesn't change it
 		},
 		'USE_BIG' : {
 			'label' : 'Use big buttons',
 			'type' : 'checkbox',
 			'default' : false
-		// Default value if user doesn't change it
 		},
 		'RESOLVE' : {
 			'label' : 'Try to resolve queued elements (hack!)',
 			'type' : 'checkbox',
 			'default' : false
-		// Default value if user doesn't change it
-		}
+		},
+		'QUEUE_POSITION' : // This is the id of the field
+		{
+			'label' : 'Queue at',
+			'type' : 'text',
+			'default' : '-1'
+		},
 	},
 	'css' : 'background:#103040;',
 	'events' : { // Callback functions object
@@ -200,7 +203,7 @@ function open_video_playlist(context) {
 
 function play_in_new_playlist(context) {
 	/* Clear playlist */
-	GM_setValue('QUEUE_POSITION', 0);
+	GM_config.set('QUEUE_POSITION', '-1');
 	context['position'] = 0;
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -279,13 +282,18 @@ function queue_in_party_mode(context, pos) {
 			// Queue exist, enqueue media at the end of user
 			// selection
 			if (pos < 0) {
-				context['position'] = xbmc_response.result.limits.end + pos + 1;
-			} else if (pos > xbmc_response.result.limits.end) {
-				context['position'] = xbmc_response.result.limits.end;
+				do {
+					context['position'] = xbmc_response.result.limits.end + 1 + 1 * pos;
+					pos = context['position'];
+				} while (context['position'] < 0)
+			} else {
+				if (pos > xbmc_response.result.limits.end) {
+					context['position'] = xbmc_response.result.limits.end;
+				}
+				GM_config.set('QUEUE_POSITION', context['position'] + 1);
 			}
 			console.log("Queue in playlist " + context['playlistid'] + " at "
 					+ context['position']);
-			GM_setValue('QUEUE_POSITION', context['position'] + 1);
 			queue_movie_at(context);
 		}
 	});
@@ -326,7 +334,7 @@ function queue_movie() {
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = xbmc_video_playlist;
-	context['position'] = GM_getValue('QUEUE_POSITION', 0);
+	context['position'] = GM_config.get('QUEUE_POSITION');
 	console.log('Trying queue movie/create new playlist ' + context['title']);
 	var xbmc_queue_depth = undefined;
 
@@ -379,7 +387,8 @@ function queue_movie() {
 					if (xbmc_properties.result.partymode == true) {
 						queue_in_party_mode(context, xbmc_partylist_size);
 					} else {
-						if (context['position'] <= xbmc_properties.result.position) {
+						if (context['position'] <= xbmc_properties.result.position &&
+							context['position'] >= 0) {
 							context['position'] = xbmc_properties.result.position + 1;
 						}
 						queue_in_party_mode(context, context['position']);
