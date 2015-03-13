@@ -32,12 +32,18 @@
  * */
 GM_config.init({
 	'id' : 'GM_config', // The id used for this instance of GM_config
-	'title' : 'Kodi setup',
+	'title' : 'Kodi Media Center Setup',
 	'fields' : // Fields object
 	{
+		'HEADER_1' : 
+		{
+	        'section': [GM_config.create('General Settings')],
+			'label' : 'Media Center Address',
+			'type' : 'hidden', // Makes this setting a text field
+		},
 		'XBMC_ADDRESS' : // This is the id of the field
 		{
-			'label' : 'Host', // Appears next to field
+			'label' : GM_config.create('Host'), // Appears next to field
 			'type' : 'text', // Makes this setting a text field
 			'default' : '<host>:<port>' // Default value if user doesn't change it
 		},
@@ -46,8 +52,14 @@ GM_config.init({
 			'type' : 'checkbox',
 			'default' : false
 		},
+		'HEADER_2' : 
+		{
+	        'section': [GM_config.create('Advanced Settings'), 'Defaults are OK, but feel free to experiment.'],
+			'label' : '',
+			'type' : 'hidden', // Makes this setting a text field
+		},
 		'RESOLVE' : {
-			'label' : 'Try to resolve queued elements (!) Requires any.url',
+			'label' : 'Try to resolve queued elements<br>(!) Requires AnyURL.Player',
 			'type' : 'checkbox',
 			'default' : false
 		},
