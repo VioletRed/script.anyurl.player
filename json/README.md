@@ -6,6 +6,6 @@ Then just click on [this link](https://github.com/VioletRed/script.anyurl.player
 to start the script installation.
 
 It works stand-alone, but some features require the companion plugin. You can download latest 
-[script.anyurl.player-X.Y.Z.zip from the releases page](https://github.com/VioletRed/script.anyurl.player/releases)
+[script.anyurl.player-X.Y.Z.zip from the releases page](https://github.com/VioletRed/script.anyurl.player/releases/latest)
 (current is 1.2.2), and install it following [the instructions in Kodi's wiki](http://kodi.wiki/view/Add-on_manager#How_to_install_from_a_ZIP_file).
 
