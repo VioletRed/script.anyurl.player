@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-02-26
-// @version     23b
+// @version     24
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -47,18 +47,18 @@ GM_config.init({
 			'default' : false
 		},
 		'RESOLVE' : {
-			'label' : 'Try to resolve queued elements (hack!)',
+			'label' : 'Try to resolve queued elements (!) Requires any.url',
 			'type' : 'checkbox',
 			'default' : false
 		},
 		'QUEUE_POSITION' : // This is the id of the field
 		{
-			'label' : 'Queue at',
+			'label' : 'Queue at (-1 means queue last)',
 			'type' : 'text',
 			'default' : '-1'
 		},
 	},
-	'css' : 'background:#103040;',
+	'css' : 'background:#102030;',
 	'events' : { // Callback functions object
 		'save' : function() { GM_config.close(); },
 		'close' : init_xbmc_support,
@@ -156,15 +156,18 @@ function open_video_player(context) {
 				+ '"params":{"item": { "file" : "'
 				+ context['encoded'] + '" }}, "id" : 1}',
 		onload : function(response) {
-			setTimeout(function() {show_ui_msg("PLAYING", 4000);}, 2000);
+			setTimeout(function() {
+				show_ui_msg("PLAYING", 4000);
+			}, 2000);
 			console.log('Playing video directly');
 			setTimeout(function() {
 				local_context = {};
 				local_context['position'] = 0;
 				local_context['playlistid'] = 1;
-				execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
-					console.log("Resolve playlist");
-				})
+				execute_anyurl_command(local_context, 'resolve_plugin',
+						function(response) {
+							console.log("Resolve playlist");
+						})
 			}, 5000)
 		}
 	});
@@ -256,7 +259,9 @@ function queue_movie_at(context) {
 			xbmc_queued = context['url'];
 			execute_anyurl_command(context, 'resolve_single_plugin', function(
 					response) {
-				setTimeout(function() {show_ui_msg("QUEUEED", 4000);}, 2000);
+				setTimeout(function() {
+					show_ui_msg("QUEUEED", 4000);
+				}, 2000);
 			})
 		}
 	})
@@ -279,14 +284,12 @@ function queue_in_party_mode(context, pos) {
 				console.log("Error: Playlist.GetItems bad response");
 				return;
 			}
-			// Queue exist, enqueue media at the end of user
-			// selection
-			if (pos < 0) {
+			if (pos < 0) { // Queue in a position relative to the end of the queue
 				do {
 					context['position'] = xbmc_response.result.limits.end + 1 + 1 * pos;
 					pos = context['position'];
 				} while (context['position'] < 0)
-			} else {
+			} else { // Queue in an absolute position
 				if (pos > xbmc_response.result.limits.end) {
 					context['position'] = xbmc_response.result.limits.end;
 				}
@@ -309,7 +312,6 @@ function init_xbmc_support() {
 	xbmc_address = GM_config.get('XBMC_ADDRESS');
 }
 
-
 /* Send link to Kodi */
 function queue_movie() {
 	var context = {};
@@ -321,21 +323,25 @@ function queue_movie() {
 		context['title'] = context['title'].replace(/\s*$/gm, '');
 		context['title'] = encodeURIComponent(context['title']);
 	} else { // Everybody else
-		context['title'] = encodeURIComponent(get_meta_contents("title",
-				document.title));
+		context['title'] = encodeURIComponent(get_meta_contents("og:title",
+				get_meta_contents("title", document.title)));
 	}
 	if (document.getElementById("eow-description")) { // Youtube
-		context['description'] = encodeURIComponent(document.getElementById(
-				"eow-description").textContent);
+		context['description'] = encodeURIComponent(document
+				.getElementById("eow-description").textContent);
 	} else { // Everybody else
-		context['description'] = encodeURIComponent(get_meta_contents(
-				"description", context['title']));
+		context['description'] = encodeURIComponent(get_meta_contents("og:description",
+				get_meta_contents("description", context['title'])));
 	}
+	context['image'] = encodeURIComponent(get_meta_contents(
+			"og:image", get_meta_contents("image",
+			"special://home/addons/script.anyurl.player/icon.png")));
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = xbmc_video_playlist;
 	context['position'] = GM_config.get('QUEUE_POSITION');
-	console.log('Trying queue movie/create new playlist ' + context['title']);
+	console.log('Trying queue movie/create new playlist ' + context['title']
+			+ ' as ' + context['encoded']);
 	var xbmc_queue_depth = undefined;
 
 	show_ui_msg("LOADING", 30000);
@@ -373,7 +379,7 @@ function queue_movie() {
 				onload : function(response) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					context['playlistid'] = xbmc_properties.result.playlistid;
-					// If the player is not playing the playlist, 
+					// If the player is not playing the playlist,
 					// assume the other playlist is active
 					if (xbmc_properties.result.position == -1) {
 						if (context['playlistid'] == xbmc_video_playlist) {
@@ -387,8 +393,8 @@ function queue_movie() {
 					if (xbmc_properties.result.partymode == true) {
 						queue_in_party_mode(context, xbmc_partylist_size);
 					} else {
-						if (context['position'] <= xbmc_properties.result.position &&
-							context['position'] >= 0) {
+						if (context['position'] <= xbmc_properties.result.position
+								&& context['position'] >= 0) {
 							context['position'] = xbmc_properties.result.position + 1;
 						}
 						queue_in_party_mode(context, context['position']);
@@ -653,8 +659,9 @@ function binarySearch(items, value) {
 function get_meta_contents(mn, dv) {
 	var d = document;
 	var m = d.getElementsByTagName('meta'); // meta tags in body
-	for ( var i in m ) {
-		if (m[i].name == mn) return m[i].content;
+	for ( var i in m) {
+		if (m[i].name == mn)
+			return m[i].content;
 	}
 	return dv;
 }
@@ -691,6 +698,15 @@ function url_is_playlist(video_url) {
  */
 function encode_url_for_queueing(context) {
 	switch (current_host) {
+	case "svtplay.se":
+		var svt_url = context['url'].split('svtplay\.se');
+		console.log(svt_url[1])
+		return 'plugin://plugin.video.svtplay/?mode=video&url='
+				+ encodeURIComponent(svt_url[1]);
+	case "ted.com":
+		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
+				+ encodeURIComponent(context['url']) + '&icon=a';
+		break;
 	case "youtube.com":
 	case "youtu.be":
 		/*
@@ -699,10 +715,6 @@ function encode_url_for_queueing(context) {
 		 */
 		var yt_params = parse_yt_params(context['url']);
 		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
-		break;
-	case "ted.com":
-		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(context['url']) + '&icon=a';
 		break;
 	}
 	/* URL needs extra processing on Kodi's side */
@@ -741,7 +753,6 @@ function encode_url_for_new_playlist(context) {
 	}
 	return encode_url_for_queueing(context)
 }
-
 
 /* Add buttons only if necessary */
 if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
