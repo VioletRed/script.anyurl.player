@@ -76,14 +76,9 @@ def resolveURL(url, label, description=''):
             infolabels={"Studio":"","ShowTitle":"","Title":label,
                         "plot":description, 'plotoutline': description}
             li.setInfo(type="video", infoLabels=infolabels)
-        else: # No need to resolve anything
+        else: # Unable to resolve
             xbmc.log("%s: Non resolvable URL: %s %s" % (addon_id, url, label), xbmc.LOGNOTICE)
-            li = xbmcgui.ListItem(label = label, path=url)
-            file_url = url
-            infolabels={"Studio":"","ShowTitle":"","Title":label,
-                        "plot":description, 'plotoutline': description}
-            li.setInfo(type="video", infoLabels=infolabels)
-
+            return (None, '')
         li.setProperty('IsPlayable', 'true')
         return (li, file_url)
     except KeyError:
@@ -162,6 +157,7 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
     if (re.match('plugin://plugin.video.youtube', url_parts[0])):
         url = reencodeYT(args.get('video_id', [''])[0])
         if not label: label = args.get('label',[''])[0]
+        if not label: label = item.getLabel()
         if not description: description = args.get('description',[''])[0]
     elif (re.match('plugin://script.anyurl.player', url_parts[0])):
         url = args.get('url',[''])[0]
@@ -172,12 +168,21 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
     return True
 
 def replaceItem(playlist, position, url, label):
-    orig = xbmc.PlayList(playlist)[position]
-    if not orig:
+    item = xbmc.PlayList(playlist)[position]
+    if not item:
         xbmc.log("%s: No item \"%s\"in playlist %s" % (addon_id, label, playlist))
         return False
+    orig_url = item.getfilename()
     resolved = queueVideo(url, label, playlist, position)
-    xbmc.PlayList(playlist).remove(orig.getfilename())
+    xbmc.PlayList(playlist).remove(orig_url)
+    if not resolved: # Just update infolabels
+        infolabels={"Studio":"","ShowTitle":"","Title":label,
+                    "plot":description, 'plotoutline': description}
+        item.setLabel(label)
+        item.setInfo(type="video", infoLabels=infolabels)
+        item.setProperty('IsPlayable', 'true')
+        xbmc.PlayList(playlist).add(orig_url, item, position)
+        xbmc.log("%s: Queue resolved URI: %s %s" % (addon_id, item.getLabel(), orig_url), xbmc.LOGNOTICE)
     return resolved
 
 
