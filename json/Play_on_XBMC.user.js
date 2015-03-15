@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-02-26
-// @version     24
+// @version     24a
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -55,8 +55,13 @@ GM_config.init({
 		'HEADER_2' : 
 		{
 	        'section': [GM_config.create('Advanced Settings'), 'Defaults are OK, but feel free to experiment.'],
-			'label' : '',
+			'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
 			'type' : 'hidden', // Makes this setting a text field
+		},
+		'YT_PAUSE' : {
+			'label' : 'Disable <b>local</b> Youtube autoplay',
+			'type' : 'checkbox',
+			'default' : false
 		},
 		'RESOLVE' : {
 			'label' : 'Try to resolve queued elements<br>(!) Requires AnyURL.Player',
@@ -773,7 +778,96 @@ if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
 	if (xbmc_address == '<host>:<port>')
 		config_script();
 
-	add_play_on_xbmc_buttons()
+	add_play_on_xbmc_buttons();
+	switch (current_host) {
+	case "youtube.com":
+	case "youtu.be":
+		if (GM_config.get('YT_PAUSE')) {
+			inject(kodi_pauseyt);
+		}
+		break;
+	}
 } else {
 	console.log("Unsupported host " + document.documentURI)
+};
+
+// Injects code into the global scope.
+function inject(fn) {
+	var script = unsafeWindow.document.createElement('script');
+	script.innerHTML = '(' + fn.toString() + ')();';
+	unsafeWindow.document.body.appendChild(script);
 }
+// This function stops the video if we're not looking. Inject
+// it into the page. Note that we can't access any variables outside the
+// function here.
+function kodi_pauseyt() {
+	// Returns the player API interface or false if it's not ready.
+	function kodi_getPlayer() {
+		if (window.document 
+				&& window.document.getElementsByTagName
+				&& window.document.getElementsByTagName('video')
+				&& window.document.getElementsByTagName('video')[0]) {
+			player = window.document.getElementsByTagName('video')[0]
+			if (!player["pause"])
+				return false;
+		} else {
+			if (window.yt && window.yt.player
+					&& window.yt.player.getPlayerByElement
+					&& window.yt.player.getPlayerByElement('player-api')
+					&& window.yt.player.getPlayerByElement('player-api')["pauseVideo"]) {
+				player = window.yt.player.getPlayerByElement('player-api')
+			} else {
+				return false;
+			}
+		}
+		return player;
+	}
+	// Listen for the end of the video.
+	function kodi_activate() {
+		player = kodi_getPlayer();
+		var last_paused = document.documentURI;
+		var target = window.document.getElementById("body");
+		// create an observer instance
+		var observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(mutation) {
+				// console.log("How many "+mutation.addedNodes.length);
+				// console.log(mutation.type)
+				// console.log(mutation.addedNodes) //
+				if (mutation.type == "childList" && document.documentURI != last_paused
+						&& mutation.addedNodes.length > 0) {
+					if (mutation.addedNodes[0].tagName == "IFRAME") {
+						kodi_wait(0);
+						observer.disconnect();
+					}
+					}
+			});
+		});
+
+		// configuration of the observer:
+		var config = {
+			childList : true,
+			characterData : true
+		};
+
+		// pass in the target node, as well as the observer options
+		observer.observe(target, config);
+
+		// console.log("Active")
+		if (player['pause']) { // HTML5
+			// console.log("HTML5")
+			player.pause()
+		} else { // Flash
+			// console.log("STUPID FLASH");
+			setTimeout(function(){player.pauseVideo()}, 1200);
+		}
+		// if (document.hidden || document.mozHidden || document.webkitHidden)
+		// window.yt.player.getPlayerByElement('player-api').pauseVideo();
+	}
+	// Wait until the YouTube API's ready.
+	function kodi_wait(count) {
+		if (count < 50) {
+			setTimeout(kodi_getPlayer() ? kodi_activate : function() {kodi_wait(count+1)}, 100);
+		}
+	}
+	kodi_wait(0);
+};
