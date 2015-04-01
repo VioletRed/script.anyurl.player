@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-02-26
-// @version     24a
+// @date        2015-04-01
+// @version     25
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -185,38 +185,34 @@ function open_video_player(context) {
 						function(response) {
 							console.log("Resolve playlist");
 						})
-			}, 5000)
+			}, 8000)
 		}
 	});
 }
 
 function open_video_playlist(context) {
-	console.log("About to open playlist");
-	setTimeout(function() {
-		console.log('Playing new video list');
-		GM_xmlhttpRequest({
-			method : 'POST',
-			url : 'http://' + xbmc_address + '/jsonrpc',
-			headers : {
-				"Content-type" : "application/json"
-			},
-			data : '{"jsonrpc": "2.0", "method": "Player.Open", '
-					+ '"params":{"item": { "playlistid" : '
-					+ xbmc_video_playlist + ' }}, "id" : 1}',
-			onload : function(response) {
-				console.log('Playing video');
-				show_ui_msg("PLAYING", 4000);
-			}
-		});
-	}, 3500);
+	console.log('Playing new video list');
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			"Content-type" : "application/json"
+		},
+		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
+				+ '"params":{"item": { "playlistid" : ' + xbmc_video_playlist
+				+ ' }}, "id" : 1}',
+		onload : function(response) {
+			console.log('Playing video');
+			show_ui_msg("PLAYING", 4000);
+		}
+	});
 	/* Resolve the whole playlist, just in case */
 	setTimeout(function() {
 		local_context = {};
 		local_context['position'] = 0;
 		local_context['playlistid'] = 1;
-		console.log("About to resolve");
 		execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
-			console.log("Resolve playlist");
+			console.log("Resolving playlist");
 		})
 	}, 40000)
 }
@@ -242,8 +238,7 @@ function play_in_new_playlist(context) {
 				open_video_player(context);
 			} else {
 				context['position'] = 0;
-				queue_movie_at(context);
-				open_video_playlist(context)
+				queue_movie_at(context, open_video_playlist);
 			}
 		},
 		onerror : xbmc_json_error,
@@ -252,7 +247,7 @@ function play_in_new_playlist(context) {
 	});
 }
 
-function queue_movie_at(context) {
+function queue_movie_at(context, last_step) {
 	if (xbmc_queued == context['url']) {
 		// Show somehow that this action was already completed
 		console.log("Already queued " + xbmc_queued);
@@ -274,12 +269,10 @@ function queue_movie_at(context) {
 		timeout : 6000,
 		onload : function(response) {
 			xbmc_queued = context['url'];
-			execute_anyurl_command(context, 'resolve_single_plugin', function(
-					response) {
-				setTimeout(function() {
-					show_ui_msg("QUEUEED", 4000);
-				}, 2000);
-			})
+			last_step(context);
+			setTimeout(function() {
+				show_ui_msg("QUEUEED", 4000);
+			}, 2000);
 		}
 	})
 }
@@ -314,7 +307,12 @@ function queue_in_party_mode(context, pos) {
 			}
 			console.log("Queue in playlist " + context['playlistid'] + " at "
 					+ context['position']);
-			queue_movie_at(context);
+			queue_movie_at(context, function(context) {
+				execute_anyurl_command(context, 'resolve_single_plugin',
+						function(response) {
+							console.log("Resolve single item");
+						});
+			});
 		}
 	});
 }
@@ -717,13 +715,11 @@ function encode_url_for_queueing(context) {
 	switch (current_host) {
 	case "svtplay.se":
 		var svt_url = context['url'].split('svtplay\.se');
-		console.log(svt_url[1])
 		return 'plugin://plugin.video.svtplay/?mode=video&url='
 				+ encodeURIComponent(svt_url[1]);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
 				+ encodeURIComponent(context['url']) + '&icon=a';
-		break;
 	case "youtube.com":
 	case "youtu.be":
 		/*
@@ -732,7 +728,6 @@ function encode_url_for_queueing(context) {
 		 */
 		var yt_params = parse_yt_params(context['url']);
 		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
-		break;
 	}
 	/* URL needs extra processing on Kodi's side */
 	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
@@ -830,16 +825,18 @@ function kodi_pauseyt() {
 		// create an observer instance
 		var observer = new MutationObserver(function(mutations) {
 			mutations.forEach(function(mutation) {
-				// console.log("How many "+mutation.addedNodes.length);
+				// console.log("How many " + mutation.addedNodes.length);
 				// console.log(mutation.type)
-				// console.log(mutation.addedNodes) //
-				if (mutation.type == "childList" && document.documentURI != last_paused
+				// console.log(mutation.addedNodes)
+				if (mutation.type == "childList"
+						&& document.documentURI != last_paused
 						&& mutation.addedNodes.length > 0) {
-					if (mutation.addedNodes[0].tagName == "IFRAME") {
+					if ((mutation.addedNodes[0].tagName == "IFRAME")
+							|| (mutation.addedNodes[0].tagName == "DIV")) {
 						kodi_wait(0);
 						observer.disconnect();
 					}
-					}
+				}
 			});
 		});
 
@@ -855,7 +852,7 @@ function kodi_pauseyt() {
 		// console.log("Active")
 		if (player['pause']) { // HTML5
 			// console.log("HTML5")
-			player.pause()
+			setTimeout(function(){player.pause()}, 300);
 		} else { // Flash
 			// console.log("STUPID FLASH");
 			setTimeout(function(){player.pauseVideo()}, 1200);
