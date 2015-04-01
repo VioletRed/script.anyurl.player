@@ -7,7 +7,7 @@ import xbmcgui
 import xbmcaddon
 import xbmcplugin
 
-_locallib_path = os.path.dirname(os.path.realpath(__file__)) + "/lib/"
+_locallib_path = os.path.dirname(xbmc.translatePath("special://home/addons/script.anyurl.player/lib"))
 sys.path.append(_locallib_path)
 
 def reencodeYT(video_id):
@@ -139,8 +139,8 @@ def resolvePlaylist(playlist_id, position):
     while (not matched and (int(position) < int(playlist.size()))):
         # Try next item on the list
         if resolvePlaylistElement(playlist_id, position):
-            position += 1
             matched = True
+        position += 1
     if (int(position) < int(playlist.size())):
         xbmc.sleep(10000) # Resolve one video every 10 seconds
         xbmc.executebuiltin("RunScript(script.anyurl.player,mode=resolve_plugin,position=%d,playlist=%d)" % (position, playlist_id))
@@ -153,7 +153,7 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
     item = playlist[position]
     url_parts = string.split(item.getfilename(),'?',2)
     if len(url_parts) > 1: args = urlparse.parse_qs(url_parts[1])
-    else: return True # Nothing to resolve
+    else: return False # Nothing to resolve
     if (re.match('plugin://plugin.video.youtube', url_parts[0])):
         url = reencodeYT(args.get('video_id', [''])[0])
         if not label: label = args.get('label',[''])[0]
@@ -164,8 +164,9 @@ def resolvePlaylistElement(playlist_id, position, url='', label='', description=
         if not label: label = args.get('label',[''])[0]
         if not description: description = args.get('description',[''])[0]
     if (url and label):
-        return replaceItem(playlist_id, position, url, label)
-    return True
+        replaceItem(playlist_id, position, url, label)
+        return True
+    return False # Nothing changed
 
 def replaceItem(playlist, position, url, label):
     item = xbmc.PlayList(playlist)[position]
