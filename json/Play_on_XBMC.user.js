@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-04-01
-// @version     25
+// @version     25b
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -58,13 +58,21 @@ GM_config.init({
 			'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
 			'type' : 'hidden', // Makes this setting a text field
 		},
-		'YT_PAUSE' : {
-			'label' : 'Disable <b>local</b> Youtube autoplay',
+		'RESOLVE' :
+		{
+			'label' : 'Try to resolve queued elements<br>(!) Requires AnyURL.Player',
 			'type' : 'checkbox',
 			'default' : false
 		},
-		'RESOLVE' : {
-			'label' : 'Try to resolve queued elements<br>(!) Requires AnyURL.Player',
+		'EDIT_TITLE' :
+		{
+			'label' : 'Edit title before sending to AnyURL.Player',
+			'type' : 'checkbox',
+			'default' : false
+		},
+		'YT_PAUSE' :
+		{
+			'label' : 'Disable <b>local</b> Youtube autoplay',
 			'type' : 'checkbox',
 			'default' : false
 		},
@@ -330,7 +338,11 @@ function init_xbmc_support() {
 /* Send link to Kodi */
 function queue_movie() {
 	var context = {};
+	var parser = document.createElement('a');
 	context['url'] = document.documentURI;
+	parser.href = context['url'];
+	context['path'] = parser.pathname;
+	context['domain'] = parser.hostname.replace(top_domain, '');
 	if (document.getElementById("eow-title")) { // Youtube
 		context['title'] = document.getElementById("eow-title").textContent;
 		context['title'] = context['title'].replace(/\n/gm, '');
@@ -351,6 +363,7 @@ function queue_movie() {
 	context['image'] = encodeURIComponent(get_meta_contents(
 			"og:image", get_meta_contents("image",
 			"special://home/addons/script.anyurl.player/icon.png")));
+	context['type'] = encodeURIComponent(get_meta_contents("og:type", "movie"));
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = xbmc_video_playlist;
@@ -713,25 +726,40 @@ function url_is_playlist(video_url) {
  */
 function encode_url_for_queueing(context) {
 	switch (current_host) {
+	case "letmewatchthis.com":
+	case "primewire.ag":
+		var title_re = /Watch%20%22(.*)%22%20(\([0-9]+\)).*/
+		context['title'] = context['title'].replace(title_re, "$1%20$2");
+		console.log(context["title"]);
+		return 'plugin://plugin.video.1channel/?img=' + context['image']
+				+ '&title=' + context['title'] + '&url='
+				+ encodeURIComponent(context['path']) + '&video_type='
+				+ context['type'] + '&mode=GetSources'
 	case "svtplay.se":
 		var svt_url = context['url'].split('svtplay\.se');
 		return 'plugin://plugin.video.svtplay/?mode=video&url='
 				+ encodeURIComponent(svt_url[1]);
+	case "ur.se":
+	case "urplay.se":
+		return 'plugin://plugin.video.urplay/?mode=video&video='
+				+ encodeURIComponent("http://ur.se" + context['path']);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
 				+ encodeURIComponent(context['url']) + '&icon=a';
 	case "youtube.com":
 	case "youtu.be":
-		/*
-		 * Better talk to YouTube plugin directly, it allows for more flexible
-		 * use
-		 */
+		// Better talk to YouTube plugin directly, it allows for more flexible
+		// use
 		var yt_params = parse_yt_params(context['url']);
 		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
 	}
 	/* URL needs extra processing on Kodi's side */
 	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
 			+ encodeURIComponent(context['url']);
+	if (GM_config.get('EDIT_TITLE')) {
+		context['title'] = encodeURIComponent(
+				prompt("Video name", decodeURIComponent(context['title'])));
+	}
 	if (context['title'] != undefined) {
 		anyurl_command += '&title=' + context['title'];
 	}
@@ -798,8 +826,7 @@ function inject(fn) {
 function kodi_pauseyt() {
 	// Returns the player API interface or false if it's not ready.
 	function kodi_getPlayer() {
-		if (window.document 
-				&& window.document.getElementsByTagName
+		if (window.document && window.document.getElementsByTagName
 				&& window.document.getElementsByTagName('video')
 				&& window.document.getElementsByTagName('video')[0]) {
 			player = window.document.getElementsByTagName('video')[0]
@@ -863,7 +890,9 @@ function kodi_pauseyt() {
 	// Wait until the YouTube API's ready.
 	function kodi_wait(count) {
 		if (count < 50) {
-			setTimeout(kodi_getPlayer() ? kodi_activate : function() {kodi_wait(count+1)}, 100);
+			setTimeout(kodi_getPlayer() ? kodi_activate : function() {
+				kodi_wait(count + 1)
+			}, 100);
 		}
 	}
 	kodi_wait(0);
