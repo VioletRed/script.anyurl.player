@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-04-01
-// @version     25b
+// @date        2015-04-04
+// @version     25c
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -829,7 +829,7 @@ function kodi_pauseyt() {
 		if (window.document && window.document.getElementsByTagName
 				&& window.document.getElementsByTagName('video')
 				&& window.document.getElementsByTagName('video')[0]) {
-			player = window.document.getElementsByTagName('video')[0]
+			player = window.document.getElementsByTagName('video')[0];
 			if (!player["pause"])
 				return false;
 		} else {
@@ -837,7 +837,7 @@ function kodi_pauseyt() {
 					&& window.yt.player.getPlayerByElement
 					&& window.yt.player.getPlayerByElement('player-api')
 					&& window.yt.player.getPlayerByElement('player-api')["pauseVideo"]) {
-				player = window.yt.player.getPlayerByElement('player-api')
+				player = window.yt.player.getPlayerByElement('player-api');
 			} else {
 				return false;
 			}
@@ -851,20 +851,9 @@ function kodi_pauseyt() {
 		var target = window.document.getElementById("body");
 		// create an observer instance
 		var observer = new MutationObserver(function(mutations) {
-			mutations.forEach(function(mutation) {
-				// console.log("How many " + mutation.addedNodes.length);
-				// console.log(mutation.type)
-				// console.log(mutation.addedNodes)
-				if (mutation.type == "childList"
-						&& document.documentURI != last_paused
-						&& mutation.addedNodes.length > 0) {
-					if ((mutation.addedNodes[0].tagName == "IFRAME")
-							|| (mutation.addedNodes[0].tagName == "DIV")) {
-						kodi_wait(0);
-						observer.disconnect();
-					}
-				}
-			});
+			// console.log("MUTATION PAUSE");
+			observer.disconnect();
+			kodi_wait(0);
 		});
 
 		// configuration of the observer:
@@ -874,15 +863,18 @@ function kodi_pauseyt() {
 		};
 
 		// pass in the target node, as well as the observer options
-		observer.observe(target, config);
 
 		// console.log("Active")
 		if (player['pause']) { // HTML5
 			// console.log("HTML5")
-			setTimeout(function(){player.pause()}, 300);
+			setTimeout(function(){player.pause();}, 300);
+			setTimeout(function(){player.pause(); observer.observe(target, config);}, 600);
 		} else { // Flash
-			// console.log("STUPID FLASH");
-			setTimeout(function(){player.pauseVideo()}, 1200);
+			// console.log("STUPID FLASH, you never know how long is it going to take");
+			setTimeout(function(){player.pauseVideo();}, 1100);
+			setTimeout(function(){player.pauseVideo();}, 1400);
+			setTimeout(function(){player.pauseVideo();}, 1800);
+			setTimeout(function(){player.pauseVideo(); observer.observe(target, config);}, 2200);
 		}
 		// if (document.hidden || document.mozHidden || document.webkitHidden)
 		// window.yt.player.getPlayerByElement('player-api').pauseVideo();
