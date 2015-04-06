@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-04-04
-// @version     25c
+// @version     25d
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -851,9 +851,12 @@ function kodi_pauseyt() {
 		var target = window.document.getElementById("body");
 		// create an observer instance
 		var observer = new MutationObserver(function(mutations) {
-			// console.log("MUTATION PAUSE");
-			observer.disconnect();
-			kodi_wait(0);
+			if (document.documentURI != last_paused) {
+				// console.log("MUTATION PAUSE");
+				observer.disconnect();
+				last_paused = document.URI;
+				kodi_wait(0);
+			}
 		});
 
 		// configuration of the observer:
