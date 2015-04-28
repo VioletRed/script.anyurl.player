@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-04-04
-// @version     25d
+// @date        2015-04-28
+// @version     26
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -745,7 +745,7 @@ function encode_url_for_queueing(context) {
 				+ encodeURIComponent("http://ur.se" + context['path']);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(context['url']) + '&icon=a';
+				+ encodeURIComponent(context['url']) + '&icon='+context['image'];
 	case "youtube.com":
 	case "youtu.be":
 		// Better talk to YouTube plugin directly, it allows for more flexible
