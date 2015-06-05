@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-04-28
-// @version     26
+// @version     27
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -341,7 +341,7 @@ function queue_movie() {
 	var parser = document.createElement('a');
 	context['url'] = document.documentURI;
 	parser.href = context['url'];
-	context['path'] = parser.pathname;
+	context['path'] = parser.pathname.split('#')[0];
 	context['domain'] = parser.hostname.replace(top_domain, '');
 	if (document.getElementById("eow-title")) { // Youtube
 		context['title'] = document.getElementById("eow-title").textContent;
@@ -752,6 +752,8 @@ function encode_url_for_queueing(context) {
 		// use
 		var yt_params = parse_yt_params(context['url']);
 		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
+	case "vimeo.com":
+		return 'plugin://plugin.video.vimeo/play/?video_id=' + context['path'];
 	}
 	/* URL needs extra processing on Kodi's side */
 	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
