@@ -7,6 +7,8 @@ import xbmcgui
 import xbmcaddon
 import xbmcplugin
 
+import tempfile
+
 _locallib_path = os.path.dirname(xbmc.translatePath("special://home/addons/script.anyurl.player/lib"))
 sys.path.append(_locallib_path)
 
@@ -64,8 +66,28 @@ def resolveURL(url, label, description=''):
     try:
         pass
         media_source = HostedMediaFile(url)
-        xbmc.log("Resolving %s" % url, xbmc.LOGDEBUG)
+        xbmc.log("Resolving %s" % url, xbmc.LOGNOTICE)
+
+        # Acquire lock
+        # Be sure only one script runs at a time
+        tmpfile = tempfile.gettempdir()+"/.anyurl.resolver.lock"
+        counter = 0
+        while (os.path.isfile(tmpfile) and counter < 200):
+            xbmc.log("%s Waiting for lock file %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+            xbmc.sleep(2000)
+            counter = counter + 1
+        if (os.path.isfile(tmpfile)):
+            raise RuntimeError('Failed to acquire lock')
+            return False # Lock removed afer two minutes, but fail anyway
+        xbmc.log("%s Locking %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+        open(tmpfile, 'a').close()
+        if counter > 0:
+            xbmc.sleep(3000)
+
         file_url = media_source.resolve()
+
+        xbmc.log("%s Unlocking %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+        os.remove(tmpfile) # Unlock
         li = None
         if hasattr(media_source, "get_list_item"): li = media_source.get_list_item()
 
@@ -85,6 +107,8 @@ def resolveURL(url, label, description=''):
         xbmc.log("%s: Missing URL" % (addon_id), xbmc.LOGNOTICE)
     except:
         xbmc.log("%s: Unhandled exception @resolveURL %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
+
+    os.remove(tmpfile) # Unlock after fail
     return (None, '')
 
 ''' Play a single video without touching the current playlist '''
@@ -149,6 +173,7 @@ def resolvePlaylist(playlist_id, position):
 
 def resolvePlaylistElement(playlist_id, position, url='', label='', description=''):
     xbmc.log("%s Looking for plugins in playlist %d from %d" % (addon_id, playlist_id, position), xbmc.LOGDEBUG)
+    # Process item
     playlist = xbmc.PlayList(playlist_id)
     item = playlist[position]
     url_parts = string.split(item.getfilename(),'?',2)
