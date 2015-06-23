@@ -72,22 +72,24 @@ def resolveURL(url, label, description=''):
         # Be sure only one script runs at a time
         tmpfile = tempfile.gettempdir()+"/.anyurl.resolver.lock"
         counter = 0
-        while (os.path.isfile(tmpfile) and counter < 200):
-            xbmc.log("%s Waiting for lock file %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+        while (os.path.isfile(tmpfile) and counter < 2000):
+            xbmc.log("%s Waiting for lock file %d - %s" % (addon_id, counter, url), xbmc.LOGDEBUG)
             xbmc.sleep(2000)
             counter = counter + 1
         if (os.path.isfile(tmpfile)):
-            raise RuntimeError('Failed to acquire lock')
-            return False # Lock removed afer two minutes, but fail anyway
-        xbmc.log("%s Locking %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+            xbmc.log("%s Failed to lock %s" % (addon_id, url), xbmc.LOGNOTICE)
+            os.remove(tmpfile) # Unlock after fail
+            return (None, '') # Lock removed afer two minutes, but fail anyway
+        xbmc.log("%s Locking %s" % (addon_id, url), xbmc.LOGDEBUG)
         open(tmpfile, 'a').close()
-        if counter > 0:
-            xbmc.sleep(3000)
 
         file_url = media_source.resolve()
 
-        xbmc.log("%s Unlocking %s" % (addon_id, tmpfile), xbmc.LOGNOTICE)
+        if counter > 0: # Wait a bit if we had to wait before to be sure resolver is ready for the next one
+            xbmc.sleep(2500)
+        xbmc.log("%s Unlocking %s" % (addon_id, tmpfile), xbmc.LOGDEBUG)
         os.remove(tmpfile) # Unlock
+
         li = None
         if hasattr(media_source, "get_list_item"): li = media_source.get_list_item()
 
@@ -108,7 +110,6 @@ def resolveURL(url, label, description=''):
     except:
         xbmc.log("%s: Unhandled exception @resolveURL %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
 
-    os.remove(tmpfile) # Unlock after fail
     return (None, '')
 
 ''' Play a single video without touching the current playlist '''
