@@ -59,29 +59,56 @@ GM_config
 					'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
 					'type' : 'hidden', // Makes this setting a text field
 				},
-				'YT_SHUFFLE' : {
-					'label' : 'Shuffle playlists',
-					'type' : 'checkbox',
-					'default' : false
-				},
 				'RESOLVE' : {
 					'label' : 'Try to resolve queued elements with AnyURL.Player',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
 				'EDIT_TITLE' : {
 					'label' : 'Edit title before sending to AnyURL.Player',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
 				'YT_PAUSE' : {
 					'label' : 'Disable local Youtube autoplay',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
+				'YT_SHUFFLE' : {
+					'label' : 'Shuffle playlists',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue/Queue next', 'Always', 'Never'],
+			        'labelPos': 'left',
+			        'default': 'Smart Queue/Play'
+				},
+			    'BUTTON1': {
+			        'label': 'Click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play'],
+			        'labelPos': 'left',
+			        'default': 'Smart Queue/Play'
+			    },
+			    'BUTTON2': {
+			        'label': 'Double-click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
+			        'labelPos': 'left',
+			        'default': 'Queue'
+			    },
+			    'BUTTON3': {
+			        'label': 'Long-click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
+			        'labelPos': 'left',
+			        'default': 'Queue next'
+			    },
 				'QUEUE_ALWAYS' : {
 					'label' : 'Queue even when Kodi is not playing',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
 				'QUEUE_POSITION' : // This is the id of the field
@@ -367,8 +394,7 @@ function init_xbmc_support() {
 }
 
 /* Send link to Kodi */
-function queue_movie(queue_and_play, pos) {
-	var context = {};
+function queue_movie(context) {
 	var parser = document.createElement('a');
 	context['url'] = document.documentURI;
 	parser.href = context['url'];
@@ -604,6 +630,15 @@ function add_play_on_xbmc_buttons() {
 			clearTimeout(xbmc_long_click_timer);
 			xbmc_long_click_timer = null;
 			xbmc_click_timer = setTimeout(function() {
+				var context = {};
+				context['forced_queue'] = (GM_config.get('YT_SHUFFLE') == 'Always');
+				switch (GM_config.get('BUTTON1')) {
+				case 'Smart Queue/Play':
+					break;
+
+				default:
+					break;
+				}
 				queue_movie(!GM_config.get('QUEUE_ALWAYS'), null);
 				xbmc_click_timer = null;
 			}, 500);
@@ -855,7 +890,7 @@ function encode_url_for_new_playlist(context) {
 		if (yt_params["list"]) {
 			result = 'plugin://plugin.video.youtube/play/?play=1&playlist_id='
 					+ yt_params["list"];
-			if (GM_config.get('YT_SHUFFLE')) {
+			if (context['yt_suffle']) {
 				result = result + 'order=shuffle&';
 			} else {
 				result = result + 'order=default&';
