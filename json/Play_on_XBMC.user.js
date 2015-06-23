@@ -30,65 +30,75 @@
 /* ============================================================================
  * Global config
  * */
-GM_config.init({
-	'id' : 'GM_config', // The id used for this instance of GM_config
-	'title' : 'Kodi Media Center Setup',
-	'fields' : // Fields object
-	{
-		'HEADER_1' : 
-		{
-	        'section': [GM_config.create('General Settings')],
-			'label' : 'Media Center Address',
-			'type' : 'hidden', // Makes this setting a text field
-		},
-		'XBMC_ADDRESS' : // This is the id of the field
-		{
-			'label' : GM_config.create('Host'), // Appears next to field
-			'type' : 'text', // Makes this setting a text field
-			'default' : '<host>:<port>' // Default value if user doesn't change it
-		},
-		'USE_BIG' : {
-			'label' : 'Use big buttons',
-			'type' : 'checkbox',
-			'default' : false
-		},
-		'HEADER_2' : 
-		{
-	        'section': [GM_config.create('Advanced Settings'), 'Defaults are OK, but feel free to experiment.'],
-			'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
-			'type' : 'hidden', // Makes this setting a text field
-		},
-		'RESOLVE' :
-		{
-			'label' : 'Try to resolve queued elements<br>(!) Requires AnyURL.Player',
-			'type' : 'checkbox',
-			'default' : false
-		},
-		'EDIT_TITLE' :
-		{
-			'label' : 'Edit title before sending to AnyURL.Player',
-			'type' : 'checkbox',
-			'default' : false
-		},
-		'YT_PAUSE' :
-		{
-			'label' : 'Disable <b>local</b> Youtube autoplay',
-			'type' : 'checkbox',
-			'default' : false
-		},
-		'QUEUE_POSITION' : // This is the id of the field
-		{
-			'label' : 'Queue at (-1 means queue last)',
-			'type' : 'text',
-			'default' : '-1'
-		},
-	},
-	'css' : 'background:#102030;',
-	'events' : { // Callback functions object
-		'save' : function() { GM_config.close(); },
-		'close' : init_xbmc_support,
-	}
-});
+GM_config
+		.init({
+			'id' : 'GM_config', // The id used for this instance of GM_config
+			'title' : 'Kodi Media Center Setup',
+			'fields' : // Fields object
+			{
+				'HEADER_1' : {
+					'section' : [ GM_config.create('General Settings') ],
+					'label' : 'Media Center Address',
+					'type' : 'hidden', // Makes this setting a text field
+				},
+				'XBMC_ADDRESS' : // This is the id of the field
+				{
+					'label' : GM_config.create('Host'), // Appears next to field
+					'type' : 'text', // Makes this setting a text field
+					'default' : '<host>:<port>' // Default value if user doesn't
+				// change it
+				},
+				'USE_BIG' : {
+					'label' : 'Use big buttons',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'HEADER_2' : {
+					'section' : [ GM_config.create('Advanced Settings'),
+							'Defaults are OK, but feel free to experiment.' ],
+					'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
+					'type' : 'hidden', // Makes this setting a text field
+				},
+				'YT_SHUFFLE' : {
+					'label' : 'Shuffle playlists',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'RESOLVE' : {
+					'label' : 'Try to resolve queued elements with AnyURL.Player',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'EDIT_TITLE' : {
+					'label' : 'Edit title before sending to AnyURL.Player',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'YT_PAUSE' : {
+					'label' : 'Disable local Youtube autoplay',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'QUEUE_ALWAYS' : {
+					'label' : 'Queue even when Kodi is not playing',
+					'type' : 'checkbox',
+					'default' : false
+				},
+				'QUEUE_POSITION' : // This is the id of the field
+				{
+					'label' : 'Queue at (-1 means queue last)',
+					'type' : 'text',
+					'default' : '-1'
+				},
+			},
+			'css' : 'background:#102030;',
+			'events' : { // Callback functions object
+				'save' : function() {
+					GM_config.close();
+				},
+				'close' : init_xbmc_support,
+			}
+		});
 
 var xbmc_address = null;
 var xbmc_queued = null;
@@ -113,6 +123,8 @@ var xbmc_ui = null;
 var xbmc_title = null;
 var xbmc_play_control = null;
 var xbmc_msg_timer = null;
+var xbmc_click_timer = null;
+var xbmc_long_click_timer = null;
 
 /*
  * ============================================================================
@@ -136,6 +148,21 @@ function execute_anyurl_command(context, command, last_step) {
 	if (!GM_config.get('RESOLVE')) {
 		last_step();
 		return
+
+		
+
+				
+
+		
+
+						
+
+		
+
+				
+
+		
+
 	}
 
 	anyurl_command = '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
@@ -178,8 +205,8 @@ function open_video_player(context) {
 			"Content-type" : "application/json"
 		},
 		data : '{"jsonrpc": "2.0", "method": "Player.Open", '
-				+ '"params":{"item": { "file" : "'
-				+ context['encoded'] + '" }}, "id" : 1}',
+				+ '"params":{"item": { "file" : "' + context['encoded']
+				+ '" }}, "id" : 1}',
 		onload : function(response) {
 			setTimeout(function() {
 				show_ui_msg("PLAYING", 4000);
@@ -219,7 +246,8 @@ function open_video_playlist(context) {
 		local_context = {};
 		local_context['position'] = 0;
 		local_context['playlistid'] = 1;
-		execute_anyurl_command(local_context, 'resolve_plugin', function(response) {
+		execute_anyurl_command(local_context, 'resolve_plugin', function(
+				response) {
 			console.log("Resolving playlist");
 		})
 	}, 40000)
@@ -285,7 +313,7 @@ function queue_movie_at(context, last_step) {
 	})
 }
 
-function queue_in_party_mode(context, pos) {
+function queue_in_party_mode(context, pos, save_pos) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -302,16 +330,19 @@ function queue_in_party_mode(context, pos) {
 				console.log("Error: Playlist.GetItems bad response");
 				return;
 			}
-			if (pos < 0) { // Queue in a position relative to the end of the queue
+			if (pos < 0) { // Queue in a position relative to the end of the
+				// queue
 				do {
-					context['position'] = xbmc_response.result.limits.end + 1 + 1 * pos;
+					context['position'] = xbmc_response.result.limits.end + 1
+							+ 1 * pos;
 					pos = context['position'];
 				} while (context['position'] < 0)
 			} else { // Queue in an absolute position
 				if (pos > xbmc_response.result.limits.end) {
 					context['position'] = xbmc_response.result.limits.end;
 				}
-				GM_config.set('QUEUE_POSITION', context['position'] + 1);
+				if (save_pos) 
+					GM_config.set('QUEUE_POSITION', context['position'] + 1);
 			}
 			console.log("Queue in playlist " + context['playlistid'] + " at "
 					+ context['position']);
@@ -336,7 +367,7 @@ function init_xbmc_support() {
 }
 
 /* Send link to Kodi */
-function queue_movie() {
+function queue_movie(queue_and_play, pos) {
 	var context = {};
 	var parser = document.createElement('a');
 	context['url'] = document.documentURI;
@@ -357,17 +388,21 @@ function queue_movie() {
 		context['description'] = encodeURIComponent(document
 				.getElementById("eow-description").textContent);
 	} else { // Everybody else
-		context['description'] = encodeURIComponent(get_meta_contents("og:description",
-				get_meta_contents("description", context['title'])));
+		context['description'] = encodeURIComponent(get_meta_contents(
+				"og:description", get_meta_contents("description",
+						context['title'])));
 	}
-	context['image'] = encodeURIComponent(get_meta_contents(
-			"og:image", get_meta_contents("image",
-			"special://home/addons/script.anyurl.player/icon.png")));
+	context['image'] = encodeURIComponent(get_meta_contents("og:image",
+			get_meta_contents("image",
+					"special://home/addons/script.anyurl.player/icon.png")));
 	context['type'] = encodeURIComponent(get_meta_contents("og:type", "movie"));
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
-	context['playlistid'] = xbmc_video_playlist;
-	context['position'] = GM_config.get('QUEUE_POSITION');
+	context['playlistid'] = GM_getValue('KODI_PLAYLIST', xbmc_video_playlist);
+	if (pos == null)
+		context['position'] = GM_config.get('QUEUE_POSITION');
+	else 
+		context['position'] = pos;
 	console.log('Trying queue movie/create new playlist ' + context['title']
 			+ ' as ' + context['encoded']);
 	var xbmc_queue_depth = undefined;
@@ -390,8 +425,14 @@ function queue_movie() {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined
 					|| xbmc_active.result.length == 0) {
-				console.log("No active players, create a new queue");
-				play_in_new_playlist(context);
+				if (!queue_and_play) {
+					console.log("No active players, queue as video");
+					context['playlistid'] = xbmc_video_playlist;
+					queue_in_party_mode(context, -1, false);
+				} else {
+					console.log("No active players, create a new queue"+queue_and_play);
+					play_in_new_playlist(context);
+				}
 				return;
 			}
 			GM_xmlhttpRequest({
@@ -407,6 +448,7 @@ function queue_movie() {
 				onload : function(response) {
 					var xbmc_properties = JSON.parse(response.responseText);
 					context['playlistid'] = xbmc_properties.result.playlistid;
+					GM_setValue('KODI_PLAYLIST', context['playlistid']);
 					// If the player is not playing the playlist,
 					// assume the other playlist is active
 					if (xbmc_properties.result.position == -1) {
@@ -416,16 +458,17 @@ function queue_movie() {
 							context['playlistid'] = xbmc_video_playlist
 						}
 					}
-					console.log("Now playing " + xbmc_properties.result.position);
+					console.log("Now playing "
+							+ xbmc_properties.result.position);
 					console.log("Want to insert at " + context['position']);
 					if (xbmc_properties.result.partymode == true) {
-						queue_in_party_mode(context, xbmc_partylist_size);
+						queue_in_party_mode(context, xbmc_partylist_size, false);
 					} else {
 						if (context['position'] <= xbmc_properties.result.position
 								&& context['position'] >= 0) {
 							context['position'] = xbmc_properties.result.position + 1;
 						}
-						queue_in_party_mode(context, context['position']);
+						queue_in_party_mode(context, context['position'], pos == null);
 					}
 				},
 				onerror : function(response) {
@@ -555,7 +598,32 @@ function add_play_on_xbmc_buttons() {
 	xbmc_title.innerHTML = 'PLAYING';
 
 	var xbmc_play = document.createElement('span');
-	xbmc_play.addEventListener('click', queue_movie, false);
+	xbmc_play.addEventListener('click', function() {
+		if (xbmc_click_timer == null && xbmc_long_click_timer != null) {
+			console.log("click");
+			clearTimeout(xbmc_long_click_timer);
+			xbmc_long_click_timer = null;
+			xbmc_click_timer = setTimeout(function() {
+				queue_movie(!GM_config.get('QUEUE_ALWAYS'), null);
+				xbmc_click_timer = null;
+			}, 500);
+		}
+	}, false);
+	xbmc_play.addEventListener('dblclick', function() {
+		console.log("dblclick");
+		clearTimeout(xbmc_click_timer);
+		clearTimeout(xbmc_long_click_timer);
+		xbmc_long_click_timer = null;
+		queue_movie(GM_config.get('QUEUE_ALWAYS'), null);
+		xbmc_click_timer = null;
+	}, false);
+	xbmc_play.addEventListener('mousedown', function() {
+		console.log("mousedown");
+		xbmc_long_click_timer = setTimeout(function() {
+			xbmc_long_click_timer = null;
+			queue_movie(false, 0);
+		}, 1400)
+	});
 	xbmc_play.setAttribute('id', 'btPlay');
 	xbmc_play.setAttribute('title', 'Send to Kodi');
 
@@ -745,7 +813,8 @@ function encode_url_for_queueing(context) {
 				+ encodeURIComponent("http://ur.se" + context['path']);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(context['url']) + '&icon='+context['image'];
+				+ encodeURIComponent(context['url']) + '&icon='
+				+ context['image'];
 	case "youtube.com":
 	case "youtu.be":
 		// Better talk to YouTube plugin directly, it allows for more flexible
@@ -759,8 +828,8 @@ function encode_url_for_queueing(context) {
 	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
 			+ encodeURIComponent(context['url']);
 	if (GM_config.get('EDIT_TITLE')) {
-		context['title'] = encodeURIComponent(
-				prompt("Video name", decodeURIComponent(context['title'])));
+		context['title'] = encodeURIComponent(prompt("Video name",
+				decodeURIComponent(context['title'])));
 	}
 	if (context['title'] != undefined) {
 		anyurl_command += '&title=' + context['title'];
@@ -784,10 +853,15 @@ function encode_url_for_new_playlist(context) {
 		 */
 		var yt_params = parse_yt_params(context['url']);
 		if (yt_params["list"]) {
-			result = 'plugin://plugin.video.youtube/play/?play=1&order=default&playlist_id='
+			result = 'plugin://plugin.video.youtube/play/?play=1&playlist_id='
 					+ yt_params["list"];
-			if (yt_params["v"]) {
-				result = result + '&video_id=' + yt_params["v"];
+			if (GM_config.get('YT_SHUFFLE')) {
+				result = result + 'order=shuffle&';
+			} else {
+				result = result + 'order=default&';
+				if (yt_params["v"]) {
+					result = result + '&video_id=' + yt_params["v"];
+				}
 			}
 			return result;
 		}
@@ -835,7 +909,8 @@ function kodi_pauseyt() {
 			if (!player["pause"])
 				return false;
 		} else {
-			if (window.yt && window.yt.player
+			if (window.yt
+					&& window.yt.player
 					&& window.yt.player.getPlayerByElement
 					&& window.yt.player.getPlayerByElement('player-api')
 					&& window.yt.player.getPlayerByElement('player-api')["pauseVideo"]) {
@@ -872,14 +947,29 @@ function kodi_pauseyt() {
 		// console.log("Active")
 		if (player['pause']) { // HTML5
 			// console.log("HTML5")
-			setTimeout(function(){player.pause();}, 300);
-			setTimeout(function(){player.pause(); observer.observe(target, config);}, 600);
+			setTimeout(function() {
+				player.pause();
+			}, 300);
+			setTimeout(function() {
+				player.pause();
+				observer.observe(target, config);
+			}, 600);
 		} else { // Flash
-			// console.log("STUPID FLASH, you never know how long is it going to take");
-			setTimeout(function(){player.pauseVideo();}, 1100);
-			setTimeout(function(){player.pauseVideo();}, 1400);
-			setTimeout(function(){player.pauseVideo();}, 1800);
-			setTimeout(function(){player.pauseVideo(); observer.observe(target, config);}, 2200);
+			// console.log("STUPID FLASH, you never know how long is it going to
+			// take");
+			setTimeout(function() {
+				player.pauseVideo();
+			}, 1100);
+			setTimeout(function() {
+				player.pauseVideo();
+			}, 1400);
+			setTimeout(function() {
+				player.pauseVideo();
+			}, 1800);
+			setTimeout(function() {
+				player.pauseVideo();
+				observer.observe(target, config);
+			}, 2200);
 		}
 		// if (document.hidden || document.mozHidden || document.webkitHidden)
 		// window.yt.player.getPlayerByElement('player-api').pauseVideo();
