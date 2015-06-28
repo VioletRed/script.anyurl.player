@@ -6,8 +6,8 @@
 // @description Use with AnyURL plugin from:
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
-// @date        2015-04-28
-// @version     27
+// @date        2015-06-28
+// @version     27.1
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -59,31 +59,52 @@ GM_config
 					'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
 					'type' : 'hidden', // Makes this setting a text field
 				},
-				'YT_SHUFFLE' : {
-					'label' : 'Shuffle playlists',
-					'type' : 'checkbox',
-					'default' : false
-				},
 				'RESOLVE' : {
 					'label' : 'Try to resolve queued elements with AnyURL.Player',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
 				'EDIT_TITLE' : {
 					'label' : 'Edit title before sending to AnyURL.Player',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
 				'YT_PAUSE' : {
 					'label' : 'Disable local Youtube autoplay',
 					'type' : 'checkbox',
+					'labelPos' : 'right',
 					'default' : false
 				},
-				'QUEUE_ALWAYS' : {
-					'label' : 'Queue even when Kodi is not playing',
-					'type' : 'checkbox',
-					'default' : false
+				'YT_SHUFFLE' : {
+					'label' : 'Shuffle playlists',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue/Queue next', 'Always', 'Never'],
+			        'labelPos': 'left',
+			        'default': 'Never'
 				},
+			    'BUTTON1': {
+			        'label': 'Single-click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
+			        'labelPos': 'left',
+			        'default': 'Smart Queue/Play'
+			    },
+			    'BUTTON2': {
+			        'label': 'Double-click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
+			        'labelPos': 'left',
+			        'default': 'Queue'
+			    },
+			    'BUTTON3': {
+			        'label': 'Long-click action',
+			        'type': 'select',
+			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
+			        'labelPos': 'left',
+			        'default': 'Queue next'
+			    },
 				'QUEUE_POSITION' : // This is the id of the field
 				{
 					'label' : 'Queue at (-1 means queue last)',
@@ -148,21 +169,6 @@ function execute_anyurl_command(context, command, last_step) {
 	if (!GM_config.get('RESOLVE')) {
 		last_step();
 		return
-
-		
-
-				
-
-		
-
-						
-
-		
-
-				
-
-		
-
 	}
 
 	anyurl_command = '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
@@ -270,6 +276,7 @@ function play_in_new_playlist(context) {
 			/* Add movies to Video playlist */
 			xbmc_queued = "";
 			context['encoded'] = encode_url_for_new_playlist(context);
+			console.log(context['encoded']);
 			if (context['is_playlist']) {
 				open_video_player(context);
 			} else {
@@ -313,7 +320,7 @@ function queue_movie_at(context, last_step) {
 	})
 }
 
-function queue_in_party_mode(context, pos, save_pos) {
+function queue_in_party_mode(context, pos) {
 	GM_xmlhttpRequest({
 		method : 'POST',
 		url : 'http://' + xbmc_address + '/jsonrpc',
@@ -341,7 +348,7 @@ function queue_in_party_mode(context, pos, save_pos) {
 				if (pos > xbmc_response.result.limits.end) {
 					context['position'] = xbmc_response.result.limits.end;
 				}
-				if (save_pos) 
+				if (context['save_pos']) 
 					GM_config.set('QUEUE_POSITION', context['position'] + 1);
 			}
 			console.log("Queue in playlist " + context['playlistid'] + " at "
@@ -367,8 +374,98 @@ function init_xbmc_support() {
 }
 
 /* Send link to Kodi */
-function queue_movie(queue_and_play, pos) {
+function queue_movie(context) {
+	console.log('Trying queue movie/create new playlist ' + context['title']
+			+ ' as ' + context['encoded']);
+	var xbmc_queue_depth = undefined;
+
+	// Get the current playlist
+	GM_xmlhttpRequest({
+		method : 'POST',
+		url : 'http://' + xbmc_address + '/jsonrpc',
+		headers : {
+			"Content-type" : "application/json"
+		},
+		data : '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers",'
+				+ '"params":{}, "id" : 1}',
+		onerror : xbmc_json_error,
+		ontimeout : xbmc_json_timeout,
+		timeout : 6000,
+		onload : function(response) {
+			var xbmc_active = JSON.parse(response.responseText);
+			if (xbmc_active.result == undefined || xbmc_active.result.length == 0) {
+				if (!context['stop'] && context['forced_queue']) {
+					console.log("No active players, queue as video");
+					context['playlistid'] = xbmc_video_playlist;
+					queue_in_party_mode(context, -1);
+				} else {
+					console.log("No active players, create a new queue");
+					play_in_new_playlist(context);
+				}
+				return;
+			}
+			if (context['stop']) {
+				stop_movie();
+				context['stop'] = false;
+				context['forced_queue'] = false;
+				setTimeout(function(){
+					queue_movie(context); // Wait four seconds and try again
+				}, 4000)
+				return;
+			}
+			GM_xmlhttpRequest({
+				method : 'POST',
+				url : 'http://' + xbmc_address + '/jsonrpc',
+				headers : {
+					"Content-type" : "application/json"
+				},
+				data : '{"jsonrpc": "2.0", "method": "Player.GetProperties",'
+						+ '"params":{"playerid" : '
+						+ xbmc_active.result[0].playerid
+						+ ', "properties" :  [ "playlistid" , "partymode", "position" ] }, "id" : 1}',
+				onload : function(response) {
+					var xbmc_properties = JSON.parse(response.responseText);
+					context['playlistid'] = xbmc_properties.result.playlistid;
+					GM_setValue('KODI_PLAYLIST', context['playlistid']);
+					// If the player is not playing the playlist,
+					// assume the other playlist is active
+					if (xbmc_properties.result.position == -1) {
+						if (context['playlistid'] == xbmc_video_playlist) {
+							context['playlistid'] = xbmc_music_playlist
+						} else {
+							context['playlistid'] = xbmc_video_playlist
+						}
+					}
+					console.log("Now playing " + xbmc_properties.result.position);
+					console.log("Want to insert at " + context['position']);
+					if (xbmc_properties.result.partymode == true) {
+						queue_in_party_mode(context, xbmc_partylist_size);
+					} else {
+						if (context['position'] <= xbmc_properties.result.position
+								&& context['position'] >= 0) {
+							context['position'] = xbmc_properties.result.position + 1;
+						}
+						queue_in_party_mode(context, context['position']);
+					}
+				},
+				onerror : function(response) {
+					/* No active playlist */
+					console.log("Not playing playlist, queue and play")
+					play_in_new_playlist(context);
+					xbmc_json_error();
+				},
+				ontimeout : xbmc_json_timeout,
+				timeout : 6000,
+			});
+		}
+	});
+}
+
+function process_click(click_type)
+{
 	var context = {};
+	var click_func = GM_config.get(click_type);
+	var shuffle_cond = GM_config.get('YT_SHUFFLE');
 	var parser = document.createElement('a');
 	context['url'] = document.documentURI;
 	parser.href = context['url'];
@@ -399,89 +496,48 @@ function queue_movie(queue_and_play, pos) {
 	context['encoded'] = encode_url_for_queueing(context);
 	context['is_playlist'] = url_is_playlist(context['url']);
 	context['playlistid'] = GM_getValue('KODI_PLAYLIST', xbmc_video_playlist);
-	if (pos == null)
-		context['position'] = GM_config.get('QUEUE_POSITION');
-	else 
-		context['position'] = pos;
-	console.log('Trying queue movie/create new playlist ' + context['title']
-			+ ' as ' + context['encoded']);
-	var xbmc_queue_depth = undefined;
+	context['position'] = GM_config.get('QUEUE_POSITION');
+	context['save_pos'] = true;
+	context['stop'] = false;
+
+	console.log(click_type+" has funcion "+click_func);
+	switch (click_func) {
+	case 'Play':
+		context['stop'] = true;
+	case 'Smart Queue/Play':
+		context['forced_queue'] = false;
+		break;
+	case 'Queue next':
+		context['position'] = 0;
+		context['forced_queue'] = false;
+		context['save_pos'] = false;
+		break;
+	case 'Queue':
+		context['forced_queue'] = true;
+		break;
+	default:
+		break;
+	}
+
+	switch (shuffle_cond) {
+	case 'Smart Queue/Play':
+		context['yt_shuffle'] = (click_func == 'Play') || (click_func == 'Smart Queue/Play');
+		break;
+	case 'Queue/Queue next':
+		context['yt_shuffle'] = (click_func == 'Queue') || (click_func == 'Queue next');
+		break;
+	case 'Always':
+		context['yt_shuffle'] = true;
+		break;
+	default:
+		context['yt_shuffle'] = false;
+		break;
+	}
 
 	show_ui_msg("LOADING", 30000);
 
-	// Get the current playlist
-	GM_xmlhttpRequest({
-		method : 'POST',
-		url : 'http://' + xbmc_address + '/jsonrpc',
-		headers : {
-			"Content-type" : "application/json"
-		},
-		data : '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers",'
-				+ '"params":{}, "id" : 1}',
-		onerror : xbmc_json_error,
-		ontimeout : xbmc_json_timeout,
-		timeout : 6000,
-		onload : function(response) {
-			var xbmc_active = JSON.parse(response.responseText);
-			if (xbmc_active.result == undefined
-					|| xbmc_active.result.length == 0) {
-				if (!queue_and_play) {
-					console.log("No active players, queue as video");
-					context['playlistid'] = xbmc_video_playlist;
-					queue_in_party_mode(context, -1, false);
-				} else {
-					console.log("No active players, create a new queue"+queue_and_play);
-					play_in_new_playlist(context);
-				}
-				return;
-			}
-			GM_xmlhttpRequest({
-				method : 'POST',
-				url : 'http://' + xbmc_address + '/jsonrpc',
-				headers : {
-					"Content-type" : "application/json"
-				},
-				data : '{"jsonrpc": "2.0", "method": "Player.GetProperties",'
-						+ '"params":{"playerid" : '
-						+ xbmc_active.result[0].playerid
-						+ ', "properties" :  [ "playlistid" , "partymode", "position" ] }, "id" : 1}',
-				onload : function(response) {
-					var xbmc_properties = JSON.parse(response.responseText);
-					context['playlistid'] = xbmc_properties.result.playlistid;
-					GM_setValue('KODI_PLAYLIST', context['playlistid']);
-					// If the player is not playing the playlist,
-					// assume the other playlist is active
-					if (xbmc_properties.result.position == -1) {
-						if (context['playlistid'] == xbmc_video_playlist) {
-							context['playlistid'] = xbmc_music_playlist
-						} else {
-							context['playlistid'] = xbmc_video_playlist
-						}
-					}
-					console.log("Now playing "
-							+ xbmc_properties.result.position);
-					console.log("Want to insert at " + context['position']);
-					if (xbmc_properties.result.partymode == true) {
-						queue_in_party_mode(context, xbmc_partylist_size, false);
-					} else {
-						if (context['position'] <= xbmc_properties.result.position
-								&& context['position'] >= 0) {
-							context['position'] = xbmc_properties.result.position + 1;
-						}
-						queue_in_party_mode(context, context['position'], pos == null);
-					}
-				},
-				onerror : function(response) {
-					/* No active playlist */
-					console.log("Not playing playlist, queue and play")
-					play_in_new_playlist(context);
-					xbmc_json_error();
-				},
-				ontimeout : xbmc_json_timeout,
-				timeout : 6000,
-			});
-		}
-	});
+	queue_movie(context);
+
 }
 
 /*
@@ -603,8 +659,9 @@ function add_play_on_xbmc_buttons() {
 			console.log("click");
 			clearTimeout(xbmc_long_click_timer);
 			xbmc_long_click_timer = null;
+			show_ui_msg("LOADING", 500);
 			xbmc_click_timer = setTimeout(function() {
-				queue_movie(!GM_config.get('QUEUE_ALWAYS'), null);
+				process_click('BUTTON1')
 				xbmc_click_timer = null;
 			}, 500);
 		}
@@ -614,14 +671,14 @@ function add_play_on_xbmc_buttons() {
 		clearTimeout(xbmc_click_timer);
 		clearTimeout(xbmc_long_click_timer);
 		xbmc_long_click_timer = null;
-		queue_movie(GM_config.get('QUEUE_ALWAYS'), null);
+		process_click('BUTTON2')
 		xbmc_click_timer = null;
 	}, false);
 	xbmc_play.addEventListener('mousedown', function() {
 		console.log("mousedown");
 		xbmc_long_click_timer = setTimeout(function() {
 			xbmc_long_click_timer = null;
-			queue_movie(false, 0);
+			process_click('BUTTON3')
 		}, 1400)
 	});
 	xbmc_play.setAttribute('id', 'btPlay');
@@ -855,10 +912,10 @@ function encode_url_for_new_playlist(context) {
 		if (yt_params["list"]) {
 			result = 'plugin://plugin.video.youtube/play/?play=1&playlist_id='
 					+ yt_params["list"];
-			if (GM_config.get('YT_SHUFFLE')) {
-				result = result + 'order=shuffle&';
+			if (context['yt_shuffle']) {
+				result = result + '&order=shuffle';
 			} else {
-				result = result + 'order=default&';
+				result = result + '&order=default';
 				if (yt_params["v"]) {
 					result = result + '&video_id=' + yt_params["v"];
 				}
@@ -867,7 +924,7 @@ function encode_url_for_new_playlist(context) {
 		}
 		break;
 	}
-	return encode_url_for_queueing(context)
+	return context['encoded'];
 }
 
 /* Add buttons only if necessary */
