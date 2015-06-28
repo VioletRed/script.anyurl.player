@@ -169,21 +169,6 @@ function execute_anyurl_command(context, command, last_step) {
 	if (!GM_config.get('RESOLVE')) {
 		last_step();
 		return
-
-		
-
-				
-
-		
-
-						
-
-		
-
-				
-
-		
-
 	}
 
 	anyurl_command = '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
@@ -939,7 +924,7 @@ function encode_url_for_new_playlist(context) {
 		}
 		break;
 	}
-	return encode_url_for_queueing(context)
+	return context['encoded'];
 }
 
 /* Add buttons only if necessary */
