@@ -86,7 +86,7 @@ def resolveURL(url, label, description=''):
         file_url = media_source.resolve()
 
         if counter > 0: # Wait a bit if we had to wait before to be sure resolver is ready for the next one
-            xbmc.sleep(2500)
+            xbmc.sleep(3000)
         xbmc.log("%s Unlocking %s" % (addon_id, tmpfile), xbmc.LOGDEBUG)
         os.remove(tmpfile) # Unlock
 
