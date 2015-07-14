@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-06-28
-// @version     27.1
+// @version     27.2
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -394,9 +394,9 @@ function queue_movie(context) {
 		onload : function(response) {
 			var xbmc_active = JSON.parse(response.responseText);
 			if (xbmc_active.result == undefined || xbmc_active.result.length == 0) {
+				context['playlistid'] = xbmc_video_playlist;
 				if (!context['stop'] && context['forced_queue']) {
 					console.log("No active players, queue as video");
-					context['playlistid'] = xbmc_video_playlist;
 					queue_in_party_mode(context, -1);
 				} else {
 					console.log("No active players, create a new queue");
