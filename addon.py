@@ -138,7 +138,7 @@ def playVideo(url, label, playlist_id, description=''):
         xbmc.log("%s: Unhandled exception @playVideo %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
 
 ''' Queue a new URL into the playlist '''
-def queueVideo(url, label, playlist_id, position):
+def queueVideo(url, label, playlist_id, position, old_url=""):
     if True:
         pass
     try:
@@ -148,6 +148,9 @@ def queueVideo(url, label, playlist_id, position):
         if li is None:
             return False
 
+        if old_url:
+            li.setProperty("original_listitem_url",old_url)
+
         if file_url:
             xbmc.PlayList(playlist_id).add(file_url, li, position)
             xbmc.log("%s: Queue resolved URI: %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
@@ -155,6 +158,7 @@ def queueVideo(url, label, playlist_id, position):
         xbmc.log("%s: Unhandled exception @queueVideo %s" % (addon_id, sys.exc_info()[0]), xbmc.LOGNOTICE)
         return False
     return True
+
 
 ''' Recursive function to resolve "plugin://" adresses '''
 def resolvePlaylist(playlist_id, position):
@@ -200,7 +204,7 @@ def replaceItem(playlist, position, url, label):
         xbmc.log("%s: No item \"%s\"in playlist %s" % (addon_id, label, playlist))
         return False
     orig_url = item.getfilename()
-    resolved = queueVideo(url, label, playlist, position)
+    resolved = queueVideo(url, label, playlist, position, orig_url)
     xbmc.PlayList(playlist).remove(orig_url)
     if not resolved: # Just update infolabels
         infolabels={"Studio":"","ShowTitle":"","Title":label,
@@ -227,6 +231,7 @@ try:
     description = args.get('description',[label])[0]
     position = int(args.get('position',['0'])[0])
     playlist = int(args.get('playlistid',['1'])[0])
+    full_url = base_url + sys.argv[2]
 except:
     # Parse arguments as a non-handled plugin (e.g. script)
     base_url = "plugin://"+sys.argv[0]
@@ -237,12 +242,13 @@ except:
     description = urllib2.unquote(getArg(sys.argv, 'description', label))
     position = int(getArg(sys.argv, 'position', '-1'))
     playlist = int(getArg(sys.argv, 'playlistid', '1'))
+    full_url = "plugin://script.anyurl.resolver/?mode=play_video&url="+urllib2.quote(url)
 
 if mode == 'play_video':
     if addon_handle: # Can't play video without a handle
         playVideo(url=url, label=label, playlist_id=playlist)
 elif mode == 'queue_video':
-    queueVideo(url=url, label=label, playlist_id=playlist, position=position)
+    queueVideo(url=url, label=label, playlist_id=playlist, position=position, old_url=full_url)
 elif mode == 'resolve_plugin':
     resolvePlaylist(playlist_id=playlist, position=position)
 elif mode == 'resolve_single_plugin':
