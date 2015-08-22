@@ -36,13 +36,13 @@ GM_config.init({
 			'fields' : // Fields object
 			{
 				'HEADER_1' : {
-					'section' : [ GM_config.create('General Settings') ],
+					'section' : [ 'General Settings' ],
 					'label' : 'Media Center Address',
 					'type' : 'hidden', // Makes this setting a text field
 				},
 				'XBMC_ADDRESS' : // This is the id of the field
 				{
-					'label' : GM_config.create('Host'), // Appears next to field
+					'label' : 'Host', // Appears next to field
 					'type' : 'text', // Makes this setting a text field
 					'default' : '<host>:<port>' // Default value if user doesn't
 				// change it
@@ -53,7 +53,7 @@ GM_config.init({
 					'default' : false
 				},
 				'HEADER_2' : {
-					'section' : [ GM_config.create('Advanced Settings'),
+					'section' : [ 'Advanced Settings',
 							'Defaults are OK, but feel free to experiment.' ],
 					'label' : 'Youtube tunning will need you to reload current page after saving (F5)<br>',
 					'type' : 'hidden', // Makes this setting a text field
