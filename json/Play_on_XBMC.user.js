@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     28
+// @version     28.1
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -30,8 +30,7 @@
 /* ============================================================================
  * Global config
  * */
-GM_config
-		.init({
+GM_config.init({
 			'id' : 'GM_config', // The id used for this instance of GM_config
 			'title' : 'Kodi Media Center Setup',
 			'fields' : // Fields object
@@ -79,32 +78,36 @@ GM_config
 				},
 				'YT_SHUFFLE' : {
 					'label' : 'Shuffle playlists',
-			        'type': 'select',
-			        'options': ['Smart Queue/Play', 'Queue/Queue next', 'Always', 'Never'],
-			        'labelPos': 'left',
-			        'default': 'Never'
+					'type' : 'select',
+					'options' : [ 'Smart Queue/Play', 'Queue/Queue next',
+							'Always', 'Never' ],
+					'labelPos' : 'left',
+					'default' : 'Never'
 				},
-			    'BUTTON1': {
-			        'label': 'Single-click action',
-			        'type': 'select',
-			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
-			        'labelPos': 'left',
-			        'default': 'Smart Queue/Play'
-			    },
-			    'BUTTON2': {
-			        'label': 'Double-click action',
-			        'type': 'select',
-			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
-			        'labelPos': 'left',
-			        'default': 'Queue'
-			    },
-			    'BUTTON3': {
-			        'label': 'Long-click action',
-			        'type': 'select',
-			        'options': ['Smart Queue/Play', 'Queue', 'Play','Queue next'],
-			        'labelPos': 'left',
-			        'default': 'Queue next'
-			    },
+				'BUTTON1' : {
+					'label' : 'Single-click action',
+					'type' : 'select',
+					'options' : [ 'Smart Queue/Play', 'Queue', 'Play',
+							'Queue next' ],
+					'labelPos' : 'left',
+					'default' : 'Smart Queue/Play'
+				},
+				'BUTTON2' : {
+					'label' : 'Double-click action',
+					'type' : 'select',
+					'options' : [ 'Smart Queue/Play', 'Queue', 'Play',
+							'Queue next' ],
+					'labelPos' : 'left',
+					'default' : 'Queue'
+				},
+				'BUTTON3' : {
+					'label' : 'Long-click action',
+					'type' : 'select',
+					'options' : [ 'Smart Queue/Play', 'Queue', 'Play',
+							'Queue next' ],
+					'labelPos' : 'left',
+					'default' : 'Queue next'
+				},
 				'QUEUE_POSITION' : // This is the id of the field
 				{
 					'label' : 'Queue at (-1 means queue last)',
@@ -114,23 +117,17 @@ GM_config
 			},
 			'css' : 'background:#102030;',
 			'events' : { // Callback functions object
-				'save' : function() {
-					GM_config.close();
-				},
+				'save' : function() { GM_config.close(); },
 				'close' : init_xbmc_support,
 			}
 		});
 
 var xbmc_address = null;
 var xbmc_queued = null;
-const
-xbmc_music_playlist = 0; // Queue for party mode
-const
-xbmc_video_playlist = 1; // Queue for video mode
-const
-xbmc_partylist_size = -10
-const
-is_playlist = 1;
+const xbmc_music_playlist = 0; // Queue for party mode
+const xbmc_video_playlist = 1; // Queue for video mode
+const xbmc_partylist_size = -10;
+const is_playlist = 1;
 // Remove known top domain names (i.e 'www', 'm', 'embed')
 var top_domain = /^www\.|^m\.|^embed\./
 var current_host = window.location.host.toLowerCase().replace(top_domain, '');
@@ -340,16 +337,17 @@ function queue_in_party_mode(context, pos) {
 			if (pos < 0) { // Queue in a position relative to the end of the
 				// queue
 				do {
-					context['position'] = xbmc_response.result.limits.end + 1
-							+ 1 * pos;
+					context['position'] = 1*xbmc_response.result.limits.end + 1
+							+ 1*pos;
 					pos = context['position'];
 				} while (context['position'] < 0)
 			} else { // Queue in an absolute position
 				if (pos > xbmc_response.result.limits.end) {
 					context['position'] = xbmc_response.result.limits.end;
 				}
-				if (context['save_pos']) 
-					GM_config.set('QUEUE_POSITION', context['position'] + 1);
+				if (context['save_pos']) {
+					GM_config.set('QUEUE_POSITION', 1 + 1*context['position']);
+				}
 			}
 			console.log("Queue in playlist " + context['playlistid'] + " at "
 					+ context['position']);
@@ -443,7 +441,7 @@ function queue_movie(context) {
 					} else {
 						if (context['position'] <= xbmc_properties.result.position
 								&& context['position'] >= 0) {
-							context['position'] = xbmc_properties.result.position + 1;
+							context['position'] = 1*xbmc_properties.result.position + 1;
 						}
 						queue_in_party_mode(context, context['position']);
 					}
