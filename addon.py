@@ -59,7 +59,7 @@ def getArg(args, label, default=None):
 
 ''' Try to resolve URL '''
 def resolveURL(url, label, description=''):
-    from urlresolver.types import HostedMediaFile
+    from urlresolver import HostedMediaFile
 
     if True:
         pass
@@ -93,7 +93,10 @@ def resolveURL(url, label, description=''):
         li = None
         if hasattr(media_source, "get_list_item"): li = media_source.get_list_item()
 
-        if li: # Do nothing if resolver can create a ListItem
+        if li: # Update labels with user provided ones (yt stopped working for no reason)
+            infolabels={"Studio":"","ShowTitle":"","Title":label,
+                        "plot":description, 'plotoutline': description}
+            li.setInfo(type="video", infoLabels=infolabels)
             pass
         elif file_url: # Resolved, but not with metadata
             li = xbmcgui.ListItem(label = label, path = file_url)
