@@ -15,7 +15,7 @@ sys.path.append(_locallib_path)
 def reencodeYT(video_id):
     return "https://www.youtube.com/watch?v="+video_id
 
-''' Extend Kodi player in order to resolve playlist as soon as playback starts 
+''' Extend Kodi player in order to resolve playlist as soon as playback starts
 '''
 class MyPlayer(xbmc.Player):
     def __init__( self):
@@ -26,7 +26,7 @@ class MyPlayer(xbmc.Player):
 
     def onPlayBackStarted(self):
         xbmc.Player.onPlayBackStarted(self)
-        # Hack here: dig into the playlists, 
+        # Hack here: dig into the playlists,
         #   and resolve Youtube (and others in the future) videos in advance
         playlist = xbmc.PlayList(self._playlist)
         position = playlist.getposition() + 1
@@ -155,6 +155,8 @@ def queueVideo(url, label, playlist_id, position, old_url=""):
             li.setProperty("original_listitem_url",old_url)
 
         if file_url:
+            if (file_url == old_url):
+                return False
             xbmc.PlayList(playlist_id).add(file_url, li, position)
             xbmc.log("%s: Queue resolved URI: %s %s" % (addon_id, li.getLabel(), file_url), xbmc.LOGNOTICE)
     except:
@@ -216,7 +218,7 @@ def replaceItem(playlist, position, url, label):
         item.setInfo(type="video", infoLabels=infolabels)
         item.setProperty('IsPlayable', 'true')
         xbmc.PlayList(playlist).add(orig_url, item, position)
-        xbmc.log("%s: Queue resolved URI: %s %s" % (addon_id, item.getLabel(), orig_url), xbmc.LOGNOTICE)
+        xbmc.log("%s: ReplaceItem resolved URI: %s %s" % (addon_id, item.getLabel(), orig_url), xbmc.LOGNOTICE)
     return resolved
 
 
