@@ -16,6 +16,7 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
+// @downloadURL https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
 // @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
 // ==/UserScript==
 //
