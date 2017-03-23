@@ -7,10 +7,11 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     28.2
+// @version     29
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
+// @icon        https://raw.githubusercontent.com/VioletRed/script.anyurl.player/master/json/Kodi-300px.png
 // @grant       GM_addStyle
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -863,9 +864,11 @@ function encode_url_for_queueing(context) {
 		return 'plugin://plugin.video.svtplay/?mode=video&url='
 				+ encodeURIComponent(svt_url[1]);
 	case "ur.se":
-	case "urplay.se":
 		return 'plugin://plugin.video.urplay/?mode=video&video='
 				+ encodeURIComponent("http://ur.se" + context['path']);
+	case "urplay.se":
+		return 'plugin://plugin.video.urplay/?mode=video&url='
+				+ encodeURIComponent("http://www.urplay.se" + context['path']);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
 				+ encodeURIComponent(context['url']) + '&icon='
@@ -942,7 +945,7 @@ if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
 		break;
 	}
 } else {
-	console.log("Unsupported host " + document.documentURI)
+	// console.log("Unsupported host " + document.documentURI)
 };
 
 // Injects code into the global scope.

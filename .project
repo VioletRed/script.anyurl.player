@@ -4,7 +4,6 @@
 	<comment></comment>
 	<projects>
 		<project>PlayOnKodi</project>
-		<project>urlresolver</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
