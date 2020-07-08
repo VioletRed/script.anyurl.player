@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     29
+// @version     30
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -471,8 +471,9 @@ function process_click(click_type)
 	parser.href = context['url'];
 	context['path'] = parser.pathname.split('#')[0];
 	context['domain'] = parser.hostname.replace(top_domain, '');
-	if (document.getElementById("eow-title")) { // Youtube
-		context['title'] = document.getElementById("eow-title").textContent;
+	let yt_title = document.getElementsByClassName("title style-scope ytd-video-primary-info-renderer");
+	if (yt_title.length > 0) { // Youtube meta tags are broken
+		context['title'] = yt_title[0].textContent;
 		context['title'] = context['title'].replace(/\n/gm, '');
 		context['title'] = context['title'].replace(/^\s*/gm, '');
 		context['title'] = context['title'].replace(/\s*$/gm, '');
@@ -481,9 +482,9 @@ function process_click(click_type)
 		context['title'] = encodeURIComponent(get_meta_contents("og:title",
 				get_meta_contents("title", document.title)));
 	}
-	if (document.getElementById("eow-description")) { // Youtube
-		context['description'] = encodeURIComponent(document
-				.getElementById("eow-description").textContent);
+	let yt_description = document.getElementsByClassName("content style-scope ytd-video-secondary-info-renderer");
+	if (yt_description.length > 0) { // Youtube
+		context['description'] = encodeURIComponent(yt_description[0].textContent);
 	} else { // Everybody else
 		context['description'] = encodeURIComponent(get_meta_contents(
 				"og:description", get_meta_contents("description",
