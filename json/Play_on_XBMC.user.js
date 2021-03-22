@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     30
+// @version     31
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -162,14 +162,9 @@ function xbmc_json_timeout(response) {
 	consoloe.log("XBMC JSON Timeout")
 }
 
-function execute_anyurl_command(context, command, last_step) {
+function execute_anyurl_command(context, command, last_msg) {
 	// Don't try to resolve by default
 	// Resolving is kind of a hack, and might not behave
-	if (!GM_config.get('RESOLVE')) {
-		last_step();
-		return
-	}
-
 	anyurl_command = '{"jsonrpc": "2.0", "id" : 1, "method": "Addons.ExecuteAddon", '
 			+ '"params": {  "addonid":"script.anyurl.player",'
 			+ '"params" : {'
@@ -190,6 +185,7 @@ function execute_anyurl_command(context, command, last_step) {
 		anyurl_command += ', "description" : "' + context['description'] + '"';
 	}
 	anyurl_command += ' } } }';
+	//console.log(anyurl_command)
 
 	GM_xmlhttpRequest({
 		method : 'POST',
@@ -198,7 +194,7 @@ function execute_anyurl_command(context, command, last_step) {
 			"Content-type" : "application/json"
 		},
 		data : anyurl_command,
-		onload : last_step
+		onload : function(result) { console.log(last_msg);}
 	});
 }
 
@@ -221,10 +217,11 @@ function open_video_player(context) {
 				local_context = {};
 				local_context['position'] = 0;
 				local_context['playlistid'] = 1;
-				execute_anyurl_command(local_context, 'resolve_plugin',
-						function(response) {
-							console.log("Resolve playlist");
-						})
+				if (!GM_config.get('RESOLVE')) {
+					console.log("Open video player");
+				} else {
+					execute_anyurl_command(local_context, 'resolve_plugin', "Resolve at opening")
+				}
 			}, 8000)
 		}
 	});
@@ -247,15 +244,16 @@ function open_video_playlist(context) {
 		}
 	});
 	/* Resolve the whole playlist, just in case */
-	setTimeout(function() {
-		local_context = {};
-		local_context['position'] = 0;
-		local_context['playlistid'] = 1;
-		execute_anyurl_command(local_context, 'resolve_plugin', function(
-				response) {
-			console.log("Resolving playlist");
-		})
-	}, 40000)
+	if (!GM_config.get('RESOLVE')) {
+		console.log("Not resolving playlist");
+	} else {
+		setTimeout(function() {
+			local_context = {};
+			local_context['position'] = 0;
+			local_context['playlistid'] = 1;
+			execute_anyurl_command(local_context, 'resolve_plugin', "Resolve playlist")
+		}, 10000);
+	}
 }
 
 function play_in_new_playlist(context) {
@@ -354,10 +352,11 @@ function queue_in_party_mode(context, pos) {
 			console.log("Queue in playlist " + context['playlistid'] + " at "
 					+ context['position']);
 			queue_movie_at(context, function(context) {
-				execute_anyurl_command(context, 'resolve_single_plugin',
-						function(response) {
-							console.log("Resolve single item");
-						});
+				if (!GM_config.get('RESOLVE')) {
+					execute_anyurl_command(context, 'update_title', "Update single item title");
+				} else {
+					execute_anyurl_command(context, 'resolve_single_plugin', "Resolve single item");
+				}
 			});
 		}
 	});
@@ -814,10 +813,21 @@ function get_meta_contents(mn, dv) {
 	var d = document;
 	var m = d.getElementsByTagName('meta'); // meta tags in body
 	for ( var i in m) {
-		if (m[i].name == mn)
-			return m[i].content;
+		if (m[i].name == mn) {
+			elem = decodeURIComponent(m[i].content);
+			console.log(mn + " " + elem);
+			return elem;
+		}
 	}
-	return dv;
+	return decodeURIComponent(dv);
+}
+
+function get_spreaker_dl() {
+	dl_link = document.getElementById("track-download");
+	if (!!dl_link){
+		return dl_link.href;
+	}
+	return "";
 }
 /*
  * Youtube has more features than most streaming sites,it needs special
@@ -852,37 +862,32 @@ function url_is_playlist(video_url) {
  */
 function encode_url_for_queueing(context) {
 	switch (current_host) {
-	case "letmewatchthis.com":
-	case "primewire.ag":
-		var title_re = /Watch%20%22(.*)%22%20(\([0-9]+\)).*/
-		context['title'] = context['title'].replace(title_re, "$1%20$2");
-		console.log(context["title"]);
-		return 'plugin://plugin.video.1channel/?img=' + context['image']
-				+ '&title=' + context['title'] + '&url='
-				+ encodeURIComponent(context['path']) + '&video_type='
-				+ context['type'] + '&mode=GetSources'
+	case "spreaker.com":
+		var spreaker_url = get_spreaker_dl();
+		return 'plugin://plugin.audio.spreaker/?mode=100&url='
+				+ encodeURIComponent(spreaker_url)
+				+ '&name=' + context['title']
 	case "svtplay.se":
 		var svt_url = context['url'].split('svtplay\.se');
 		return 'plugin://plugin.video.svtplay/?mode=video&url='
 				+ encodeURIComponent(svt_url[1]);
+	case "ted.com":
+		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
+				+ encodeURIComponent(context['url']) + '&icon='
+				+ context['image'];
 	case "ur.se":
 		return 'plugin://plugin.video.urplay/?mode=video&video='
 				+ encodeURIComponent("http://ur.se" + context['path']);
 	case "urplay.se":
 		return 'plugin://plugin.video.urplay/?mode=video&url='
 				+ encodeURIComponent("http://www.urplay.se" + context['path']);
-	case "ted.com":
-		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
-				+ encodeURIComponent(context['url']) + '&icon='
-				+ context['image'];
-	case "youtube.com":
-	case "youtu.be":
-		// Better talk to YouTube plugin directly, it allows for more flexible
-		// use
-		var yt_params = parse_yt_params(context['url']);
-		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
 	case "vimeo.com":
 		return 'plugin://plugin.video.vimeo/play/?video_id=' + context['path'];
+	case "youtube.com":
+	case "youtu.be":
+		// Better talk to YouTube plugin directly, it allows for more flexible use
+		var yt_params = parse_yt_params(context['url']);
+		return 'plugin://plugin.video.youtube/play/?video_id=' + yt_params["v"];
 	}
 	/* URL needs extra processing on Kodi's side */
 	anyurl_command = 'plugin://script.anyurl.player/?mode=play_video&url='
@@ -890,12 +895,6 @@ function encode_url_for_queueing(context) {
 	if (GM_config.get('EDIT_TITLE')) {
 		context['title'] = encodeURIComponent(prompt("Video name",
 				decodeURIComponent(context['title'])));
-	}
-	if (context['title'] != undefined) {
-		anyurl_command += '&title=' + context['title'];
-	}
-	if (context['description'] != undefined) {
-		anyurl_command += '&description=' + context['description'];
 	}
 	return anyurl_command
 }
@@ -947,7 +946,7 @@ if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
 		break;
 	}
 } else {
-	// console.log("Unsupported host " + document.documentURI)
+	console.log("Unsupported host " + document.documentURI);
 };
 
 // Injects code into the global scope.
