@@ -25,7 +25,7 @@ Many supported websites require AnyURL Kodi addon. [Download it](https://github.
 
 ## F.A.Q
 
-Q. I want XYZ feature. 
+Q. I want XYZ feature.
 
 A. That's not a question, that's a request. Send me a message to "red DOT violet1 AT gmx DOT com" and we see what can be done.
 

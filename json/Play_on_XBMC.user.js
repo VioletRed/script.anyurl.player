@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     31
+// @version     32
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -785,28 +785,8 @@ function add_play_on_xbmc_buttons() {
  * Site dependent code here!!!!
  * ============================================================================
  */
-function binarySearch(items, value) {
 
-	var startIndex = 0, stopIndex = items.length - 1, middle = Math
-			.floor((stopIndex + startIndex) / 2);
-
-	while (items[middle] != value && startIndex < stopIndex) {
-		// adjust search area
-		if (value < items[middle]) {
-			stopIndex = middle - 1;
-		} else if (value > items[middle]) {
-			startIndex = middle + 1;
-		}
-
-		// recalculate middle
-		middle = Math.floor((stopIndex + startIndex) / 2);
-	}
-
-	// make sure it's the right value
-	return (items[middle] != value) ? -1 : middle;
-}
-
-/*
+ /*
  * Read metadata from HTML tags
  */
 function get_meta_contents(mn, dv) {
@@ -930,7 +910,7 @@ function encode_url_for_new_playlist(context) {
 }
 
 /* Add buttons only if necessary */
-if (binarySearch(supported_hosts, current_host) >= 0 && top == self) {
+if (supported_hosts.indexOf(current_host) > 0 && top == self) {
 	init_xbmc_support();
 	// First run?
 	if (xbmc_address == '<host>:<port>')
