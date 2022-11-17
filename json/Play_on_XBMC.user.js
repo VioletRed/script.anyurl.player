@@ -7,7 +7,7 @@
 // @description  https://github.com/VioletRed/script.anyurl.player/wiki
 //
 // @date        2015-07-25
-// @version     32
+// @version     32.1
 // @include     *
 // @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
 // @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
@@ -849,7 +849,7 @@ function encode_url_for_queueing(context) {
 				+ '&name=' + context['title']
 	case "svtplay.se":
 		var svt_url = context['url'].split('svtplay\.se');
-		return 'plugin://plugin.video.svtplay/?mode=video&url='
+		return 'plugin://plugin.video.svtplay/?mode=video&id='
 				+ encodeURIComponent(svt_url[1]);
 	case "ted.com":
 		return 'plugin://plugin.video.ted.talks/?mode=playVideo&url='
