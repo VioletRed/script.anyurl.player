@@ -4,20 +4,20 @@
 //
 // @description Resolve and play media on Kodi/XBMC
 // @description Use with AnyURL plugin from:
-// @description  https://github.com/VioletRed/script.anyurl.player/wiki
+// @description  https://github.com/RedToViolet/script.anyurl.player/README.md
 //
 // @date        2015-07-25
-// @version     32.1
+// @version     32.2
 // @include     *
-// @require     https://github.com/VioletRed/GM_config/raw/master/gm_config.js
-// @require     https://github.com/VioletRed/script.anyurl.player/raw/master/json/UI_Elements.js
-// @icon        https://raw.githubusercontent.com/VioletRed/script.anyurl.player/master/json/Kodi-300px.png
+// @require     https://github.com/RedToViolet/GM_config/raw/master/gm_config.js
+// @require     https://github.com/RedToViolet/script.anyurl.player/raw/master/json/UI_Elements.js
+// @icon        https://raw.githubusercontent.com/RedToViolet/script.anyurl.player/master/json/Kodi-300px.png
 // @grant       GM_addStyle
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_xmlhttpRequest
-// @downloadURL https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
-// @updateURL   https://github.com/VioletRed/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
+// @downloadURL https://github.com/RedToViolet/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
+// @updateURL   https://github.com/RedToViolet/script.anyurl.player/raw/master/json/Play_on_XBMC.user.js
 // ==/UserScript==
 //
 // Simple script to send media to Kodi.
@@ -25,7 +25,7 @@
 // Supported plugins:
 // 	* Youtube
 //	* TED
-// 	* AnyURL plugin for other domains (https://github.com/VioletRed/script.anyurl.player).
+// 	* AnyURL plugin for other domains (https://github.com/RedToViolet/script.anyurl.player).
 //
 // It uses the old GM_*** API, and needs cleaning.
 
